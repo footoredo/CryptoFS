@@ -7,10 +7,10 @@ public:
 
 
 private:
-  const static int MaxFuseArgc = 32;
-  char *mountPoint;
-  char *fuseArgv[MaxFuseArgc];
-  int fuseArgc;
+    const static int MaxFuseArgc = 32;
+    char *mountPoint;
+    char *fuseArgv[MaxFuseArgc];
+    int fuseArgc;
 };
 
 #endif
