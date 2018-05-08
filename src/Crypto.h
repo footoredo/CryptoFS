@@ -3,18 +3,43 @@
 
 #include <iostream>
 #include <string>
+#include <cryptopp/cryptlib.h>
+#include <cryptopp/aes.h>
+#include <cryptopp/modes.h>
+
+using namespace CryptoPP;
 
 namespace Crypto {
   struct Keys {
-    byte symmetricKey [];
-    byte publicKey [];
-    byte privateKey [];
+    const byte *symmetricKey;
+    const byte *publicKey;
+    const byte *privateKey;
   };
 
   struct CryptoMethods {
-    int (*symmetricEncrypt) (const byte *, const byte *, byte *); // plainText, key, cipherText
-    int (*symmetricDecrypt) (const byte *, const byte *, byte *); // cipherText, key, plainText
+    int (*symmetricEncrypt) (const byte *, int, const byte *, int, byte *); // plainText, key, cipherText
+    int (*symmetricDecrypt) (const byte *, int, const byte *, int, byte *); // cipherText, key, plainText
   };
+
+  static int AESEncrypt(const byte *input, int len, const byte *key, int keyLen, byte *output) {
+      SecByteBlock aesKey(key, keyLen);
+      SecByteBlock iv(AES::BLOCKSIZE);
+
+      CFB_Mode<AES>::Encryption cfbEncryption(aesKey, aesKey.size(), iv);
+      cfbEncryption.ProcessData(output, input, len);
+
+      return 0;
+  }
+
+  static int AESDecrypt(const byte *input, int len, const byte *key, int keyLen, byte *output) {
+      SecByteBlock aesKey(key, keyLen);
+      SecByteBlock iv(AES::BLOCKSIZE);
+
+      CFB_Mode<AES>::Decryption cfbDecryption(aesKey, aesKey.size(), iv);
+      cfbDecryption.ProcessData(output, input, len);
+
+      return 0;
+  }
 
   struct CryptoConfigs {
     int symmetricKeyLength;
