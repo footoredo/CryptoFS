@@ -7,12 +7,14 @@
 #include <sys/stat.h>
 
 namespace Util {
-    bool readBinary (const char *filename, byte *content, int maxLen) {
+    size_t readBinary (const char *filename, byte *content, int maxLen) {
         auto file = std::fstream (filename, std::ios::in | std::ios::binary);
-        if (file.fail ()) return false;
+        if (file.fail ()) return 0;
         file.read ((char *)content, maxLen);
+        size_t length = file.tellg();
+        // std::cout << length << std::endl;
         file.close ();
-        return true;
+        return length;
     }
 
     void writeBinary (const char *filename, const byte *content, int len) {

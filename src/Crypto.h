@@ -21,6 +21,17 @@ namespace Crypto {
         memcpy(dest, source.BytePtr(), source.size());
     }
 
+    static void writeInt(byte *pos, int x) {
+        *pos = x >> 24;
+        *(pos + 1) = x >> 16;
+        *(pos + 2) = x >> 8;
+        *(pos + 3) = x;
+    }
+
+    static int readInt(const byte *pos) {
+        return ((*pos) << 24) ^ (*(pos + 1) << 16) ^ (*(pos + 2) << 8) ^ *(pos + 3);
+    }
+
     static std::string byteToHex (const byte *input, size_t len) {
         HexEncoder encoder(NULL, false);
         std::string output;
@@ -43,13 +54,13 @@ namespace Crypto {
     };
 
     struct Configs {
-        int symmetricKeyLength;
-        int symmetricBlockLength;
-        int hashDigestLength;
-        int RSAKeyLength;
+        size_t symmetricKeyLength;
+        size_t symmetricBlockLength;
+        size_t hashDigestLength;
+        size_t RSAKeyLength;
 
-        int getKeyFileLength() {
-            return symmetricKeyLength + symmetricBlockLength + RSAKeyLength * 2 + RSAKeyLength * 8;
+        size_t getKeyFileLength() {
+            return symmetricKeyLength + symmetricBlockLength + RSAKeyLength * 2 + RSAKeyLength * 8 + 8;
         }
     };
 
@@ -68,13 +79,13 @@ namespace Crypto {
             buffer += configs.symmetricBlockLength;
 
             // std::cout << (int)(*buffer) << ' ' << (int)(*(buffer + 1)) << std::endl;
-            size_t length = *(buffer) ^ ((*(buffer + 1)) << 8); buffer += 2;
+            size_t length = readInt(buffer); buffer += 4;
             // std::cout << "length 1: " << length << std::endl;
             ArraySource publiKeySource (buffer, length, true);
             buffer += length;
             publicKey.BERDecode(publiKeySource);
 
-            length = *(buffer) ^ ((*(buffer + 1)) << 8); buffer += 2;
+            length = readInt(buffer); buffer += 4;
             // std::cout << "length 2: " << length << std::endl;
             ArraySource privateKeySource (buffer, length, true);
             buffer += length;
@@ -94,12 +105,12 @@ namespace Crypto {
             // std::cerr << "!" << std::endl;
 
             byte *tmp = new byte [configs.RSAKeyLength * 8];
-            ArraySink publicKeySink (tmp, configs.RSAKeyLength * 2);
+            ArraySink publicKeySink (tmp, configs.RSAKeyLength * 4);
             publicKey.DEREncode(publicKeySink);
             size_t length = publicKeySink.TotalPutLength();
-            *((int *)buffer) = length;
+            writeInt(buffer, length);
             // std::cout << (int)(*buffer) << ' ' << (int)(*(buffer + 1)) << std::endl;
-            memcpy (buffer += 2, tmp, length);
+            memcpy (buffer += 4, tmp, length);
             buffer += length;
 
             // std::cerr << "length 1: " << length << std::endl;
@@ -109,8 +120,8 @@ namespace Crypto {
             ArraySink privateKeySink (tmp, configs.RSAKeyLength * 8);
             privateKey.DEREncode(privateKeySink);
             length = privateKeySink.TotalPutLength();
-            *((int *)buffer) = length;
-            memcpy (buffer += 2, tmp, length);
+            writeInt(buffer, length);
+            memcpy (buffer += 4, tmp, length);
             buffer += length;
 
             // std::cerr << "length 2: " << length << std::endl;
@@ -208,7 +219,7 @@ namespace Crypto {
             methods.hashsum(input, len, output);
         }
 
-        int sign(const byte *input, size_t len, byte *output) {
+        size_t sign(const byte *input, size_t len, byte *output) {
             RSASS<PSS, SHA256>::Signer signer(keys.privateKey);
             size_t maxLen = signer.MaxSignatureLength ();
             SecByteBlock signature(maxLen);
@@ -228,8 +239,6 @@ namespace Crypto {
 
             return result;
         }
-
-        // bool verify(const byte *input,)
 
         std::string hashsum(const byte *input, size_t len) {
             byte *digest = new byte [configs.hashDigestLength];
@@ -278,8 +287,63 @@ namespace Crypto {
             std::cout << "PrivateKey: " << privateKeyToString(keys.privateKey) << std::endl;
         }
 
-        void saveSec(std::string path, const byte *content) {
+        void saveSec(std::string path, const byte *content, size_t len) {
+            byte *signature = new byte [configs.RSAKeyLength];
+            size_t sigLen = sign (content, len, signature);
+            size_t totLen = 4 + sigLen + len;
 
+            byte *raw = new byte [totLen];
+            writeInt(raw, sigLen);
+            // std::cout << (int)(raw[0]) << " " << byteToHex(raw, 4) << std::endl;
+
+            memcpy (raw + 4, signature, sigLen);
+            // std::cerr << "sig: " << byteToHex(signature, sigLen) << std::endl;
+            delete [] signature;
+
+            memcpy (raw + 4 + sigLen, content, len);
+
+            byte *encrypted = new byte [totLen];
+            encrypt(raw, totLen, encrypted);
+            delete [] raw;
+
+            Util::writeBinary(path.c_str(), encrypted, totLen);
+            // std::cout << byteToHex(encrypted, totLen) << std::endl;
+            delete [] encrypted;
+            // std::cout << totLen << std::endl;
+        }
+
+        bool loadSec(std::string path, byte *content, size_t maxLen) {
+            maxLen = maxLen + 4 + configs.RSAKeyLength;
+            // std::cout << maxLen << std::endl;
+            byte *encrypted = new byte [maxLen];
+            // memset (encrypted, 0x00, maxLen + 1);
+            size_t len = Util::readBinary(path.c_str(), encrypted, maxLen);
+            // std::cerr << "! " << len << std::endl;
+
+            byte *decrypted = new byte [len];
+            decrypt(encrypted, len, decrypted);
+            // std::cout << byteToHex(decrypted, 4) << std::endl;
+            delete [] encrypted;
+
+            size_t sigLen = readInt(decrypted);
+            // std::cerr << sigLen << std::endl;
+
+            byte *signature = new byte [sigLen];
+            memcpy (signature, decrypted + 4, sigLen);
+            // std::cerr << "sig: " << byteToHex(signature, sigLen) << std::endl;
+
+            size_t remLen = len - 4 - sigLen;
+            if (!verify(decrypted + 4 + sigLen, remLen, signature, sigLen))
+                return false;
+            delete [] signature;
+
+            // std::cerr << remLen << std::endl;
+            // std::cerr << (char)decrypted[26] << std::endl;
+            memcpy (content, decrypted + 4 + sigLen, remLen);
+            delete [] decrypted;
+            // std::cerr << "done" << std::endl;
+
+            return true;
         }
 
     private:
