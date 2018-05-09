@@ -50,6 +50,12 @@ int main () {
 // std::cout << exec ("sha256sum -b input.bin | awk '{print $1;}' | head -n1") << std::endl;
     assert (hexHash == exec ("sha256sum -b input.bin | head -n1 | awk '{printf $1;}'"));    // Testcase for hash
 
+    byte *signature = new byte [384];
+    int sigLen = crypto.sign(input, len, signature);
+    // signature[0] ^= 0x10;
+    assert (crypto.verify(input, len, signature, sigLen));
+    delete [] signature;
+
     // crypto.displayKeys();
     crypto.saveKeys(".keys");
     crypto.loadKeys(".keys");

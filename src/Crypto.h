@@ -10,13 +10,18 @@
 #include <cryptopp/hex.h>
 #include <cryptopp/osrng.h>
 #include <cryptopp/rsa.h>
+#include <cryptopp/pssr.h>
 #include <cctype>
 
 using namespace CryptoPP;
 
 namespace Crypto {
 
-    static std::string byteToHex (const byte *input, int len) {
+    static void SecByteBlockToByteArray(SecByteBlock source, byte *dest) {
+        memcpy(dest, source.BytePtr(), source.size());
+    }
+
+    static std::string byteToHex (const byte *input, size_t len) {
         HexEncoder encoder(NULL, false);
         std::string output;
 
@@ -32,9 +37,9 @@ namespace Crypto {
     }
 
     struct Methods {
-        void (*symmetricEncrypt) (const byte *, int, SecByteBlock, SecByteBlock, byte *); // plainText, key, IV, cipherText
-        void (*symmetricDecrypt) (const byte *, int, SecByteBlock, SecByteBlock, byte *); // cipherText, key, IV, plainText
-        void (*hashsum) (const byte *, int, byte *);
+        void (*symmetricEncrypt) (const byte *, size_t, SecByteBlock, SecByteBlock, byte *); // plainText, key, IV, cipherText
+        void (*symmetricDecrypt) (const byte *, size_t, SecByteBlock, SecByteBlock, byte *); // cipherText, key, IV, plainText
+        void (*hashsum) (const byte *, size_t, byte *);
     };
 
     struct Configs {
@@ -63,7 +68,7 @@ namespace Crypto {
             buffer += configs.symmetricBlockLength;
 
             // std::cout << (int)(*buffer) << ' ' << (int)(*(buffer + 1)) << std::endl;
-            int length = *(buffer) ^ ((*(buffer + 1)) << 8); buffer += 2;
+            size_t length = *(buffer) ^ ((*(buffer + 1)) << 8); buffer += 2;
             // std::cout << "length 1: " << length << std::endl;
             ArraySource publiKeySource (buffer, length, true);
             buffer += length;
@@ -81,9 +86,9 @@ namespace Crypto {
         void saveTo(byte *buffer, Configs configs) {
             memset (buffer, 0x00, configs.getKeyFileLength());
 
-            memcpy(buffer, symmetricKey.BytePtr(), configs.symmetricKeyLength);
+            SecByteBlockToByteArray(symmetricKey, buffer);
             buffer += configs.symmetricKeyLength;
-            memcpy(buffer, IV.BytePtr(), configs.symmetricBlockLength);
+            SecByteBlockToByteArray(IV, buffer);
             buffer += configs.symmetricBlockLength;
 
             // std::cerr << "!" << std::endl;
@@ -91,7 +96,7 @@ namespace Crypto {
             byte *tmp = new byte [configs.RSAKeyLength * 8];
             ArraySink publicKeySink (tmp, configs.RSAKeyLength * 2);
             publicKey.DEREncode(publicKeySink);
-            int length = publicKeySink.TotalPutLength();
+            size_t length = publicKeySink.TotalPutLength();
             *((int *)buffer) = length;
             // std::cout << (int)(*buffer) << ' ' << (int)(*(buffer + 1)) << std::endl;
             memcpy (buffer += 2, tmp, length);
@@ -118,20 +123,20 @@ namespace Crypto {
         }
     };
 
-    static void AESEncrypt(const byte *input, int len, SecByteBlock key, SecByteBlock iv, byte *output) {
+    static void AESEncrypt(const byte *input, size_t len, SecByteBlock key, SecByteBlock iv, byte *output) {
         CFB_Mode<AES>::Encryption cfbEncryption(key, key.size(), iv, 1);
         cfbEncryption.ProcessData(output, input, len);
         // std::cout << "        AES   Encrypt    " << byteToHex(key) << " " << byteToHex(iv) << " " << len << " " << byteToHex(output, len) << std::endl;
     }
 
-    static void AESDecrypt(const byte *input, int len, SecByteBlock key, SecByteBlock iv, byte *output) {
+    static void AESDecrypt(const byte *input, size_t len, SecByteBlock key, SecByteBlock iv, byte *output) {
         // std::cout << "        AES   Decrypt    " << byteToHex(key) << " " << byteToHex(iv) << " " << len << " " << byteToHex(input, len) << std::endl;
         CFB_Mode<AES>::Decryption cfbDecryption(key, key.size(), iv, 1);
         cfbDecryption.ProcessData(output, input, len);
         // std::cout << "        AES   Decrypt    " << byteToHex(key) << " " << byteToHex(iv) << " " << len << " " << byteToHex(output, len) << std::endl;
     }
 
-    static void SHA256Hash(const byte *input, int len, byte *output) {
+    static void SHA256Hash(const byte *input, size_t len, byte *output) {
         SHA256().CalculateDigest(output, input, len);
     }
 
@@ -171,8 +176,6 @@ namespace Crypto {
         }
 
         void generateKeys () {
-            AutoSeededRandomPool rnd;
-
             keys.symmetricKey = generateKey (rnd, configs.symmetricKeyLength);
             keys.IV = generateKey (rnd, configs.symmetricBlockLength);
 
@@ -183,29 +186,52 @@ namespace Crypto {
             keys.privateKey = RSA::PrivateKey(params);
         }
 
-        void encrypt(const byte *input, int len, SecByteBlock key, SecByteBlock IV, byte *output) {
+        void encrypt(const byte *input, size_t len, SecByteBlock key, SecByteBlock IV, byte *output) {
             // std::cerr << "encrypt" << std::endl;
             methods.symmetricEncrypt(input, len, key, IV, output);
             // std::cerr << "encrypt done" << std::endl;
         }
 
-        void encrypt(const byte *input, int len, byte *output) {
+        void encrypt(const byte *input, size_t len, byte *output) {
             encrypt(input, len, keys.symmetricKey, keys.IV, output);
         }
 
-        void decrypt(const byte *input, int len, SecByteBlock key, SecByteBlock IV, byte *output) {
+        void decrypt(const byte *input, size_t len, SecByteBlock key, SecByteBlock IV, byte *output) {
             methods.symmetricDecrypt(input, len, key, IV, output);
         }
 
-        void decrypt(const byte *input, int len, byte *output) {
+        void decrypt(const byte *input, size_t len, byte *output) {
             decrypt(input, len, keys.symmetricKey, keys.IV, output);
         }
 
-        void hashsum(const byte *input, int len, byte *output) {
+        void hashsum(const byte *input, size_t len, byte *output) {
             methods.hashsum(input, len, output);
         }
 
-        std::string hashsum(const byte *input, int len) {
+        int sign(const byte *input, size_t len, byte *output) {
+            RSASS<PSS, SHA256>::Signer signer(keys.privateKey);
+            size_t maxLen = signer.MaxSignatureLength ();
+            SecByteBlock signature(maxLen);
+
+            size_t sigLen = signer.SignMessage (rnd, input, len, signature);
+            signature.resize(sigLen);
+
+            SecByteBlockToByteArray(signature, output);
+            return sigLen;
+        }
+
+        bool verify(const byte *text, size_t len, const byte *signature, size_t sigLen) {
+            RSASS<PSS, SHA256>::Verifier verifier(keys.publicKey);
+
+            SecByteBlock sig (signature, sigLen);
+            bool result = verifier.VerifyMessage (text, len, sig, sigLen);
+
+            return result;
+        }
+
+        // bool verify(const byte *input,)
+
+        std::string hashsum(const byte *input, size_t len) {
             byte *digest = new byte [configs.hashDigestLength];
             hashsum(input, len, digest);
             std::string ret = byteToHex (digest, configs.hashDigestLength);
@@ -262,8 +288,9 @@ namespace Crypto {
         Methods methods;
         Keys keys;
         std::string machineIdentifier;
+        AutoSeededRandomPool rnd;
 
-        bool loadKeyFile(std::string keyPath, std::string passphrase, byte *content, int maxLen) {
+        bool loadKeyFile(std::string keyPath, std::string passphrase, byte *content, size_t maxLen) {
             std::string realContent = getMachineIdentifier() + ":" + passphrase;
             // std::cout << realContent << std::endl;
 
@@ -315,7 +342,7 @@ namespace Crypto {
 
             // std::cerr << "path: " + path << std::endl;
 
-            int len = configs.getKeyFileLength();
+            size_t len = configs.getKeyFileLength();
             byte *buffer = new byte [len];
             keys.saveTo(buffer, configs);
             // std::cerr << "asdas" << std::endl;
