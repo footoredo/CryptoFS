@@ -32,21 +32,33 @@ int main () {
     Crypto::Crypto crypto;
     crypto.generateKeys();
 
-    const byte *input = (byte *)"fuck u";
+    const byte *input = (byte *)"fuck123123123123123123123 u";
 
     int len = strlen((char *)input);
-    byte *output = new byte[len + 1];
+    byte *output = new byte[len + 1 + 16];
     crypto.encrypt(input, len, output);
-    byte *recovered = new byte[len + 1];
+    byte *recovered = new byte[len + 1 + 16];
     crypto.decrypt(output, len, recovered);
 
     assert (strcmp((char *)input, (char *)recovered) == 0);                     // Testcase for symmetric encryption
 
     std::string hexHash = crypto.hashsum(input, len);
-    Util::writeBinary(input, len, "input.bin");
+    Util::writeBinary("input.bin", input, len);
 
 // std::cout << exec ("sha256sum -b input.bin | awk '{print $1;}' | head -n1") << std::endl;
     assert (hexHash == exec ("sha256sum -b input.bin | head -n1 | awk '{printf $1;}'"));    // Testcase for hash
+
+    crypto.displayKeys();
+    crypto.saveKeys(".keys");
+    crypto.loadKeys(".keys");
+    crypto.displayKeys();
+
+    memset(recovered, 0, len + 1);
+    crypto.decrypt(output, len, recovered);
+
+    // std::cout << (char *) recovered << std::endl;
+    assert (strcmp((char *)input, (char *)recovered) == 0);                     // Testcase for symmetric encryption
+
 
     return 0;
 }
