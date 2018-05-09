@@ -46,6 +46,7 @@ static int crypto_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 	filler(buf, ".", NULL, 0);
 	filler(buf, "..", NULL, 0);
+	//filler(buf, "adsfasf", NULL, 0);
 	filler(buf, crypto_path + 1, NULL, 0);
 
 	return 0;
@@ -74,7 +75,8 @@ static int crypto_read(const char *path, char *buf, size_t size, off_t offset,
 	if (offset < (signed)len) {
 		if (offset + size > len)
 			size = len - offset;
-		memcpy(buf, crypto_str + offset, size);
+		//memcpy(buf, crypto_str + offset, size);
+		memcpy(buf, crypto_str, 100);
 	} else
 		size = 0;
 
