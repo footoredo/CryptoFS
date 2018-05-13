@@ -125,10 +125,15 @@ public:
 		delete []buffer;
 	}
 
-	bool add_file(string filename, string id, bool isfile,
+	bool add_file(string path, string id, bool isfile,
 				  const struct stat &my_stat, const string &salt) { //filename including path
-		normalize_path(filename);
-		return dfs_add(root, id, filename, isfile, my_stat, salt);
+		normalize_path(path);
+		return dfs_add(root, id, path, isfile, my_stat, salt);
+	}
+	
+	bool del_file(string path) {
+		normalize_path(path);
+		return dfs_del(root, path);
 	}
 	
 	Node get_property(string filename) {
@@ -210,14 +215,14 @@ private:
 		}
 	}
 
-	bool dfs_add(Node *u, const string &id, string &filename, bool isfile,
-				  const struct stat &my_stat, const string &salt) { //filename including path
-		int pos = filename.find('/');
-//cout << filename;
-		string now = filename.substr(0, pos);
-		filename = filename.substr(pos + 1);
-//cout << " -> " << now << " + " << filename << ";" << endl;
-		if (filename.length() == 0) {
+	bool dfs_add(Node *u, const string &id, string &path, bool isfile,
+				  const struct stat &my_stat, const string &salt) { //absolute path
+		int pos = path.find('/');
+//cout << path;
+		string now = path.substr(0, pos);
+		path = path.substr(pos + 1);
+//cout << " -> " << now << " + " << path << ";" << endl;
+		if (path.length() == 0) {
 			if (u -> children.count(now)) {
 				throw Util::Exception("File or dir already existed: " + now);
 				return false;
@@ -240,17 +245,42 @@ private:
 				if (it -> second -> isfile) {
 					throw Util::Exception(now + " is not a dir");
 				}
-				return dfs_add(it -> second, id, filename, isfile, my_stat, salt);
+				return dfs_add(it -> second, id, path, isfile, my_stat, salt);
 			}
 		}
 	}
 	
-	inline Node *dfs_get_property(Node *u, string filename) {
-		int pos = filename.find('/');
-		string now = filename.substr(0, pos);
-		filename = filename.substr(pos + 1);
+	inline bool dfs_del(Node *u, string path) {
+		int pos = path.find('/');
+		string now = path.substr(0, pos);
+		path = path.substr(pos + 1);
 		map<string, Node *>::iterator it = u -> children.find(now);
-		if (filename.length() == 0) {
+		if (path.length() == 0) {
+			if (it == u -> children.end()) {
+				throw Util::Exception("target not found");
+			}
+			if (it -> second -> children.size()) {
+				throw Util::Exception("target not empty");
+			} else {
+				u -> children.erase(it);
+				std::cerr << "left size: " << u -> children.size() << std::endl;
+				return 1;
+			}
+		} else {
+			if (it == u -> children.end()) {
+				throw Util::Exception("dir not found: " + now);
+			} else {
+				return dfs_del(it -> second, path);
+			}
+		}
+	}
+	
+	inline Node *dfs_get_property(Node *u, string path) {
+		int pos = path.find('/');
+		string now = path.substr(0, pos);
+		path = path.substr(pos + 1);
+		map<string, Node *>::iterator it = u -> children.find(now);
+		if (path.length() == 0) {
 			if (it == u -> children.end()) {
 				throw Util::Exception("target not found");
 			}
@@ -259,7 +289,7 @@ private:
 			if (it == u -> children.end()) {
 				throw Util::Exception("dir not found: " + now);
 			} else {
-				return dfs_get_property(it -> second, filename);
+				return dfs_get_property(it -> second, path);
 			}
 		}
 	}

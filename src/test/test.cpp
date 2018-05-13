@@ -43,12 +43,12 @@ inline void load() {
 
 
 int main () {
-cout << "saving..." << endl;
+/*cout << "saving..." << endl;
 	save();
 cout << "save ok\nloading..." << endl;
 	load();
 cout << "load ok" << endl;
-return 0;
+return 0;*/
 	Structure file;
 	struct stat t_stat;
 	try {
@@ -64,6 +64,9 @@ return 0;
 			}
 		}
 		file.add_file("a", "ida", 0, t_stat, "salta");//filename, id, isfile, stat, salt
+		cout << file.del_file("0/1") << endl;
+		cout << file.del_file("1/2") << endl;
+		cout << file.del_file("2/12") << endl;
 		//file.print("filetree");
 		file.save("structure.sec");
 		file.print("origin");

@@ -1,14 +1,11 @@
 {id: rt, salt: rt, isfile: 0}
     {id: id0, salt: salt0, isfile: 0}
         {id: id0, salt: salt0, isfile: 1}
-        {id: id1, salt: salt1, isfile: 1}
         {id: id2, salt: salt2, isfile: 1}
     {id: id1, salt: salt1, isfile: 0}
         {id: id0, salt: salt0, isfile: 1}
         {id: id1, salt: salt1, isfile: 1}
-        {id: id2, salt: salt2, isfile: 1}
     {id: id2, salt: salt2, isfile: 0}
         {id: id0, salt: salt0, isfile: 1}
-        {id: id1, salt: salt1, isfile: 1}
         {id: id2, salt: salt2, isfile: 1}
     {id: ida, salt: salta, isfile: 0}
