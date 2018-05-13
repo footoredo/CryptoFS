@@ -337,18 +337,13 @@ namespace Crypto {
             size_t sigLen = readInt(decrypted);
             // std::cerr << sigLen << std::endl;
 
-//std::cerr << "load sec" << " " << sigLen << std::endl;
             byte *signature = new byte [sigLen];
-//std::cerr << "load sec" << std::endl;
             memcpy (signature, decrypted + 4, sigLen);
-//std::cerr << "load sec" << std::endl;
             // std::cerr << "sig: " << byteToHex(signature, sigLen) << std::endl;
 
             size_t remLen = len - 4 - sigLen;
-//std::cerr << "load sec" << std::endl;
             if (!verify(decrypted + 4 + sigLen, remLen, signature, sigLen))
                 return false;
-//std::cerr << "load sec" << std::endl;
             delete [] signature;
 
             // std::cerr << remLen << std::endl;
@@ -369,7 +364,7 @@ namespace Crypto {
         AutoSeededRandomPool rnd;
 
         bool loadKeyFile(std::string keyPath, std::string passphrase, byte *content, size_t maxLen) {
-std::cerr << keyPath << " " << passphrase << " " << content << " " << maxLen << std::endl;
+//std::cerr << keyPath << " " << passphrase << " " << content << " " << maxLen << std::endl;
             std::string realContent = getMachineIdentifier() + ":" + passphrase;
             // std::cout << realContent << std::endl;
 
@@ -381,7 +376,7 @@ std::cerr << keyPath << " " << passphrase << " " << content << " " << maxLen << 
             std::string hash2 = hashsum(hash1, configs.hashDigestLength);
             delete [] hash1;
             std::string path = Util::combinePath(keyPath, hash2.substr(0, 2) + "/" + hash2.substr(2, 10) + ".key");
-std::cerr << "path: " << path << std::endl;
+//std::cerr << "path: " << path << std::endl;
 
             // std::cerr << "path: " + path << std::endl;
 
