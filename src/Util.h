@@ -47,6 +47,12 @@ namespace Util {
     void mkdir (std::string path) {
         ::mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
+    
+    class Exception {
+    public:
+    	std::string msg;
+    	Exception(const std::string &_msg): msg(_msg) {}
+    };
 }
 
 #endif

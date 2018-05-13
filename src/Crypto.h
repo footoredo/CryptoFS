@@ -277,6 +277,7 @@ namespace Crypto {
             std::cout << "Enter your passphrase: ";
             std::string passphrase;
             std::cin >> passphrase;
+            Util::mkdir(".keys");
             saveKeyFile(keysPath, passphrase);
         }
 

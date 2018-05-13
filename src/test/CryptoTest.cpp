@@ -69,7 +69,9 @@ int main () {
 
     // crypto.displayKeys();
     crypto.saveKeys(".keys");
+cout << "save ok" << endl;
     crypto.loadKeys(".keys");
+    return 0;
     // crypto.displayKeys();
 
     memset(recovered, 0, len + 1);
