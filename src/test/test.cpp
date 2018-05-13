@@ -52,7 +52,7 @@ return 0;
 	Structure file;
 	struct stat t_stat;
 	try {
-		/*for (int i = 0; i < 3; ++i) {
+		for (int i = 0; i < 3; ++i) {
 			string ni = to_string(i % 10);
 			file.add_file(ni, "id" + ni, 0, t_stat, "salt" + ni);
 //cerr << "father: " << i << endl;
@@ -62,8 +62,8 @@ return 0;
 				file.add_file(ni + "/" + nj, "id" + nj, 1, t_stat, "salt" + nj);
 //cerr << "son: " << j << " ok" << endl;				
 			}
-		}*/
-		file.add_file("a", "ida", 0, t_stat, "salta");
+		}
+		file.add_file("a", "ida", 0, t_stat, "salta");//filename, id, isfile, stat, salt
 		//file.print("filetree");
 		file.save("structure.sec");
 		file.print("origin");

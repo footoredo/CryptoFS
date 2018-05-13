@@ -96,9 +96,9 @@ public:
 //cerr << "loading..." << endl;
 		info = new byte[MAXN + 100];
 		memset (info, 0x00, MAXN + 10);
-cerr << "loading..." << endl;
+//cerr << "loading..." << endl;
 		crypto.loadSec(filename, info, MAXN);
-cerr << "loading: " << info << endl;
+//cerr << "\nloading: " << info << endl;
 		byte * tmp = info;
 		root = new Node();
 		load_node(tmp, root);
@@ -114,6 +114,7 @@ cerr << "loading: " << info << endl;
 		if (info.length() >= MAXN) {
 			throw Util::Exception("file system too large!");
 		}
+//cerr << "\nsave: " << info << endl;
 		byte *buffer = new byte[MAXN + 10];
 		for (int i = 0; i < info.size(); ++i) {
 			buffer[i] = info[i];
@@ -173,12 +174,18 @@ private:
 		}
 		delete u;
 	}
-
+//int cnt = 0;
 	void load_node(byte *&info, Node *u) {
+//cerr << info << endl; 
 		u -> id = convert::get_str(info);
 		u -> isfile = convert::get_bool(info);
 		u -> salt = convert::get_str(info);
 		int n_son = convert::get_int(info);
+//cerr << "node: " << u -> id << " " << u -> isfile << " " << u -> salt << " " << n_son << endl;
+//cerr << "left info->" << info << endl;
+//if (++cnt == 2) { 
+//	return;
+//}
 		string edge;
 		for (; n_son; --n_son) {
 			Node *v = new Node();
@@ -192,12 +199,13 @@ private:
 		//info = info + "__root__" + " ";
 		info = info.append(u -> id + " ");
 		info = info.append(to_string(u -> isfile) + " ");
-		info = info.append(u -> salt + " ");
+		info = info.append(u -> salt + " "); 
+//cerr << "id when saving: " << info << endl;	
 //cerr << "node: " << info << endl;
 		//print stat
 		info = info.append(to_string(u -> children.size()) + " ");
 		for (auto v: u -> children) {
-			info = info.append(v.first);
+			info = info.append(v.first + " ");
 			save_node(info, v.second);
 		}
 	}
