@@ -73,14 +73,18 @@ return 0;*/
 		file.add_file("a", "ida", 0, "salta");//filename, id, isfile, stat, salt
 		cout << file.del_file("0/1") << endl;
 		
-		
-		//cout << file.del_file("2/12") << endl;
-		//file.print("filetree");
-		file.save("structure.sec");
+		Crypto::Crypto c1;
+		c1.generateKeys();
+		c1.saveKeys(".keys");
+		Crypto::Crypto c2;
+		c2.loadKeys(".keys");
+		file.save("structure.sec", c1);
 		file.print("origin");
-		Structure newf;
-		newf.load("structure.sec");
+		
+		Structure newf;		
+		newf.load("structure.sec", c2);
 		newf.print("copy");
+		
 		system("diff copy origin");
 		system("cat origin");
 		system("rm origin");
