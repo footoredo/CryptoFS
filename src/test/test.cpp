@@ -21,7 +21,7 @@ Crypto::Crypto c1, c2;
 const byte *input = (byte *)"fuck123123123123123123123 u";
 int len = 100;
 
-inline void save() {
+/*inline void save() {
 	c1.generateKeys();
 	c1.saveKeys(".keys");
     c1.saveSec("tmp.sec", input, len);
@@ -35,10 +35,8 @@ inline void load() {
     
     assert (c2.loadSec("tmp.sec", recovered, len));
     // std::cerr << "123123" << std::endl;
-    /* for (int i = 0; i < len; ++ i)
-        std::cout << (char)(recovered[i]);*/
     std::cerr << (char *) recovered << std::endl;	
-}
+}*/
 
 
 
@@ -84,6 +82,7 @@ return 0;*/
 		newf.load("structure.sec");
 		newf.print("copy");
 		system("diff copy origin");
+		system("cat origin");
 		system("rm origin");
 		system("rm copy");
 		system("rm -r .keys");

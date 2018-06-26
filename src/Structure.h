@@ -274,7 +274,7 @@ void Structure::load(string filename) {
 	info = new byte[MAXN + 100];
 	memset (info, 0x00, MAXN + 10);
 //cerr << "loading..." << endl;
-	crypto.loadSec(filename, info, MAXN);
+	crypto.loadSec(filename, "", info, MAXN);
 //cerr << "\nloading: " << info << endl;
 	byte * tmp = info;
 	root = new Node();
@@ -293,18 +293,18 @@ void Structure::save(string filename) {
 	}
 //cerr << "\nsave: " << info << endl;
 	byte *buffer = new byte[MAXN + 10];
-	for (int i = 0; i < info.size(); ++i) {
+	for (int i = 0; i < (int)info.size(); ++i) {
 		buffer[i] = info[i];
 	}
 	buffer[info.size()] = 0;
 //cerr << buffer << endl;
-	crypto.saveSec(filename, buffer, MAXN);
+	crypto.saveSec(filename, "", buffer, MAXN);
 	delete []buffer;
 }
 
 bool Structure::add_file(string path, string id, bool isfolder, const string &salt) {
 	struct stat tmp;
-	add_file_with_stat(path, id, isfolder, tmp, salt);
+	return add_file_with_stat(path, id, isfolder, tmp, salt);
 }
 
 bool Structure::del_file(string path) {

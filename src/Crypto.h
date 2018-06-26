@@ -13,6 +13,7 @@
 #include <cryptopp/pssr.h>
 #include <cctype>
 #include <random>
+#include "Util.h"
 
 using namespace CryptoPP;
 
