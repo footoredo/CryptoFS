@@ -12,11 +12,21 @@
 #include <cryptopp/rsa.h>
 #include <cryptopp/pssr.h>
 #include <cctype>
+#include <random>
 #include "Util.h"
 
 using namespace CryptoPP;
 
 namespace Crypto {
+    static std::string _generateSalt (size_t saltLength) {
+        static const std::string alphabet = "ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678";
+        static const size_t sigma = alphabet.length();
+        static std::random_device rd;
+        std::string salt = "";
+        for (size_t i = 0; i < saltLength; ++ i)
+            salt += alphabet[rd() % sigma];
+        return salt;
+    }
 
     static SecByteBlock stringToSecByteBlock (std::string str) {
         return SecByteBlock((const unsigned char *)str.data(), str.size());
@@ -63,9 +73,10 @@ namespace Crypto {
         size_t symmetricBlockLength;
         size_t hashDigestLength;
         size_t RSAKeyLength;
+        size_t saltLength;
 
         size_t getKeyFileLength() {
-            return symmetricKeyLength + symmetricBlockLength + RSAKeyLength * 2 + RSAKeyLength * 8 + 8;
+            return symmetricKeyLength + symmetricBlockLength + RSAKeyLength * 2 + RSAKeyLength * 8 + 8 + saltLength;
         }
     };
 
@@ -74,6 +85,7 @@ namespace Crypto {
         SecByteBlock IV;
         RSA::PublicKey publicKey;
         RSA::PrivateKey privateKey;
+        std::string structureSalt;
 
         void init(const byte *buffer, Configs configs) {
             // std::cerr << "!! init" << std::endl;
@@ -97,6 +109,9 @@ namespace Crypto {
             privateKey.BERDecode(privateKeySource);
 
             // std::cout << byteToHex(buffer, configs.getKeyFileLength()) << std::endl;
+
+            structureSalt = std::string (buffer, buffer + configs.saltLength);
+//            std::cout << "loading structure salt: " + structureSalt << std::endl;
         }
 
         void saveTo(byte *buffer, Configs configs) {
@@ -130,6 +145,9 @@ namespace Crypto {
             buffer += length;
 
             // std::cerr << "length 2: " << length << std::endl;
+
+//            std::cout << "saving structure salt: " + structureSalt << std::endl;
+            memcpy (buffer, structureSalt.data(), structureSalt.length());
 
             delete [] tmp;
 
@@ -185,6 +203,7 @@ namespace Crypto {
             configs.symmetricBlockLength = AES::BLOCKSIZE;
             configs.hashDigestLength = SHA256::DIGESTSIZE;
             configs.RSAKeyLength = 384;
+            configs.saltLength = 8;
             methods.symmetricEncrypt = AESEncrypt;
             methods.symmetricDecrypt = AESDecrypt;
             methods.hashsum = SHA256Hash;
@@ -200,6 +219,9 @@ namespace Crypto {
 
             keys.publicKey = RSA::PublicKey(params);
             keys.privateKey = RSA::PrivateKey(params);
+
+            keys.structureSalt = _generateSalt (configs.saltLength);
+//            std::cout << "generating " << keys.structureSalt << std::endl;
         }
 
         void encrypt(const byte *input, size_t len, SecByteBlock key, SecByteBlock IV, byte *output) {
@@ -364,6 +386,14 @@ namespace Crypto {
             // std::cerr << "done" << std::endl;
 
             return true;
+        }
+
+        std::string getStructureSalt () {
+            return keys.structureSalt;
+        }
+
+        std::string generateSalt () {
+            return _generateSalt (configs.saltLength);
         }
 
     private:
