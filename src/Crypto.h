@@ -416,7 +416,7 @@ namespace Crypto {
             SecByteBlock IV(hash1 + configs.symmetricKeyLength, configs.symmetricBlockLength);
             std::string hash2 = hashsum(hash1, configs.hashDigestLength);
             delete [] hash1;
-            std::string path = Util::combinePath(keyPath, hash2.substr(0, 2) + "/" + hash2.substr(2, 10) + ".key");
+            std::string path = Util::combinePath(keyPath, hash2.substr(0, 12) + ".key");
 
             byte *buffer = new byte [maxLen];
             if (Util::readBinary(path.c_str(), buffer, maxLen)) {
@@ -448,9 +448,9 @@ namespace Crypto {
 
             std::string hash2 = hashsum(hash1, configs.hashDigestLength);
             delete [] hash1;
-            std::string path = Util::combinePath(keyPath, hash2.substr(0, 2) + "/" + hash2.substr(2, 10) + ".key");
+            std::string path = Util::combinePath(keyPath, hash2.substr(0, 12) + ".key");
 
-            Util::mkdir(Util::combinePath(keyPath, hash2.substr(0, 2)));
+            // Util::mkdir(Util::combinePath(keyPath, hash2.substr(0, 2)));
 
             // std::cerr << "path: " + path << std::endl;
 
