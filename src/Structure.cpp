@@ -6,9 +6,11 @@
 #include <sys/stat.h>  
 #include <unistd.h>
 #include <sys/statfs.h>
-#include "Crypto.h"
+//#include "Crypto.h"
+#include "Structure.h"
 
 using std::string;
+using std::pair;
 using std::map;
 using std::cout;
 using std::endl;
@@ -33,6 +35,20 @@ namespace convert {
 
 	inline int get_int(byte *&str) {
 		int ret = 0;
+		bool sign = true;
+		for (; *str != '-' && !isdigit(*str); ++str);
+		if (*str == '-') {
+			sign = false;
+			++str;
+		}
+		for (; isdigit(*str); ++str) {
+			ret = ret * 10 + *str - '0';
+		}
+		return sign ? ret : -ret;
+	}
+
+	inline long long get_long(byte *&str) {
+		long long ret = 0;
 		bool sign = true;
 		for (; *str != '-' && !isdigit(*str); ++str);
 		if (*str == '-') {
@@ -103,7 +119,7 @@ void Structure::delete_node(Node *u) {
 }
 	
 void Structure::load_node(byte *&info, Node *u) {
-	u -> real_size = covert::get_long(info);
+	u -> real_size = convert::get_long(info);
 	u -> isfolder = convert::get_bool(info);
 	u -> hashsum = convert::get_str(info);
 	u -> salt = convert::get_str(info);
@@ -164,7 +180,7 @@ bool Structure::dfs_add(Node *u, const string &hash, string &path,
 			if (!(it -> second -> isfolder)) {
 				throw Util::Exception(now + " is not a direction");
 			}
-			return Structure::dfs_add(it -> second, id, path, size, isfolder, salt);
+			return Structure::dfs_add(it -> second, hash, path, size, isfolder, salt);
 		}
 	}
 }
@@ -194,19 +210,19 @@ inline bool Structure::dfs_del(Node *u, string path) {
 	}
 }
 	
-inline pair<bool, vector<Node *> > Structure::dfs_get_list(Node *u, string path) {
+inline pair<bool, vector<Structure::Node *> > Structure::dfs_get_list(Structure::Node *u, string path) {
 	int pos = path.find('/');
 	string now = path.substr(0, pos);
 	path = path.substr(pos + 1);
-	map<string, Node *>::iterator it = u -> children.find(now);
-	if (it == u -> children.end() || !(it -> second).isfolder) {
-		return make_pair(false, vector<Node *>());
+	map<string, Structure::Node *>::iterator it = u -> children.find(now);
+	if (it == u -> children.end() || !(it -> second -> isfolder)) {
+		return make_pair(false, vector<Structure::Node *>());
 	}
 	if (path.length() == 0) {
 		u = it -> second;
-		vector<Node *> vec;
-		for (auto v: u.children) {
-			vec.push_back(v);
+		vector<Structure::Node *> vec;
+		for (auto v: u -> children) {
+			vec.push_back(v.second);
 		}
 		return make_pair(true, vec);
 	} else {
@@ -214,7 +230,7 @@ inline pair<bool, vector<Node *> > Structure::dfs_get_list(Node *u, string path)
 	}
 }
 
-inline void Structure::dfs_print(ofstream &fout, Node *u, string str_edge, int depth) {
+inline void Structure::dfs_print(ofstream &fout, Structure::Node *u, string str_edge, int depth) {
 	string s;
 	s.append(depth * 4, ' ');
 	fout << s << "{";
@@ -224,7 +240,7 @@ inline void Structure::dfs_print(ofstream &fout, Node *u, string str_edge, int d
 	fout << "salt: " << u -> salt << ", ";
 	fout << "edge: " << u -> edge << "}" << std::endl;
 	for (auto v: u -> children) {
-		Structure::dfs_print(fout, v.second, depth + 1);
+		Structure::dfs_print(fout, v.second, v.first, depth + 1);
 	}
 }
 
@@ -254,35 +270,35 @@ void Structure::save(string filename, Crypto::Crypto &crypto) {
 	delete []buffer;
 }
 bool Structure::add_file(string path, off_t size, bool isfolder, Crypto::Crypto &crypto) {
-	normalize_path(path);
+	Structure::normalize_path(path);
 	string nowsalt = crypto.generateSalt();
 	string nowhash = crypto.hashsum(path + ":" + nowsalt);
 	return add_file_with_stat(path, nowhash, size, isfolder, nowsalt);
 }
 
 bool Structure::del_file(string path) {
-	normalize_path(path);
+	Structure::normalize_path(path);
 	return dfs_del(root, path);
 }
 
-Node *Structure::get_target_node(string &path) {
-	normalize(path);
+Structure::Node *Structure::get_target_node(string &path) {
+	Structure::normalize_path(path);
 	path.pop_back();
 	string filename;
 	for (; convert::file_letter(path.back()); path.pop_back()) {
 		filename = path.back() + filename;
 	}
-	pair<bool, vector<Node *> > ret = dfs_get_list(root, path);
+	pair<bool, vector<Structure::Node *> > ret = dfs_get_list(root, path);
 	for (int j = 0; j < (int)ret.second.size(); +j) {
-		if (ret.second -> edge == filename) {
-			return ret.second;
+		if (ret.second[j] -> edge == filename) {
+			return ret.second[j];
 		}
 	}
 	return nullptr;
 }
 
 bool Structure::modify_size(string path, off_t size) {
-	Node *target = Structure::get_target_node(path);
+	Structure::Node *target = Structure::get_target_node(path);
 	if (target == nullptr) {
 		return false;
 	} else {
@@ -290,8 +306,8 @@ bool Structure::modify_size(string path, off_t size) {
 	}
 }
 
-State Structure::get_state(string filename) {
-	Node *target = Structure::get_target_node(path);
+Structure::State Structure::get_state(string filename) {
+	Structure::Node *target = Structure::get_target_node(filename);
 	State ret;
 	if (target == nullptr) {
 		ret.exist = false;
@@ -301,12 +317,12 @@ State Structure::get_state(string filename) {
 	return ret;
 }
 
-pair<bool, vector<State> > Structure::get_state_list(string path) {
-	normalize(path);
-	pair<bool, vector<Node *> > ret = Structure::dfs_get_list(root, path);
+pair<bool, vector<Structure::State> > Structure::get_state_list(string path) {
+	Structure::normalize_path(path);
+	pair<bool, vector<Structure::Node *> > ret = Structure::dfs_get_list(root, path);
 }
 
 void Structure::print(string filename) {
 	ofstream fout(filename);
-	dfs_print(fout, root, 0);
+	dfs_print(fout, root, "RT", 0);
 }

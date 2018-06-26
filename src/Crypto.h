@@ -514,7 +514,8 @@ namespace Crypto {
             delete [] digest;
             return ret;
         }
-
+        
+public:
         void saveSec(std::string path, std::string salt, const byte *content, size_t len) {
             byte *signature = new byte [configs.RSAKeyLength];
             size_t sigLen = sign (content, len, signature);
