@@ -267,14 +267,15 @@ private:
 
 
 void Structure::load(string filename) {
-//cerr << "loading..." << endl;
+cerr << "loading..." << endl;
 	Crypto::Crypto crypto;
 	crypto.loadKeys(".keys");
 //cerr << "loading..." << endl;
 	info = new byte[MAXN + 100];
 	memset (info, 0x00, MAXN + 10);
 //cerr << "loading..." << endl;
-	crypto.loadSec(filename, "", info, MAXN);
+cerr << crypto.getStructureSalt() << endl;
+	crypto.loadSec(filename, crypto.getStructureSalt(), info, MAXN);
 //cerr << "\nloading: " << info << endl;
 	byte * tmp = info;
 	root = new Node();
@@ -297,8 +298,8 @@ void Structure::save(string filename) {
 		buffer[i] = info[i];
 	}
 	buffer[info.size()] = 0;
-//cerr << buffer << endl;
-	crypto.saveSec(filename, "", buffer, MAXN);
+	string nowsalt = crypto.getStructureSalt();
+	crypto.saveSec(filename, nowsalt, buffer, MAXN);
 	delete []buffer;
 }
 
