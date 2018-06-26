@@ -95,7 +95,7 @@ public:
 		delete_node(root);
 	}
 	
-	//absolute path required!: /asdf/da/er
+	//absolute path required!: /asdf/da/er...   
 	
 	void load(string filename, Crypto::Crypto &crypto);
 	
