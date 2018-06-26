@@ -29,7 +29,7 @@ typedef Structure::State State;
 static int savefd;
 static ofstream logStream;
 static string mountPoint;
-//static Structure structure;
+static Structure structure;
 static Crypto::Crypto crypto;
 
 static void logs(string s) {
@@ -184,21 +184,23 @@ static void *cryptofs_init(struct fuse_conn_info *info)
     return NULL;
 }
 
+const mode_t reg_file_mode = 0x81FF;
+const mode_t dir_file_mode = 0x41FF;
+
 static int cryptofs_getattr(const char *orig_path, struct stat *stbuf)
 {
     string aPath = getAbsolutePath(orig_path);
     string rPath = getRelativePath(orig_path);
 	logs("getattr " + rPath);
 	memset(stbuf, 0, sizeof(*stbuf));
-	/*
 	State state = structure.get_state(orig_path);
-	if(!state.exit) {
+	if(!state.exist) {
 		return -2;
 	}
+	stbuf->st_mode = state.isfolder ? dir_file_mode : reg_file_mode;
 	stbuf->st_uid = getuid();
 	stbuf->st_gid = getgid();
 	stbuf->st_size = state.st_size;
-	*/
     return 0;
 }
  
@@ -217,6 +219,20 @@ static int cryptofs_readdir(const char *orig_path, void *buf, fuse_fill_dir_t fi
     string aPath = getAbsolutePath(orig_path);
     string rPath = getRelativePath(orig_path);
 
+	pair<bool, vector<State> > state_list = structure.get_state_list(orig_path);
+	if(state_list.first == false) {
+		return -2;
+	}
+	vector<State> & vc = state_list.second;
+	for(State state : vc) {
+		struct stat st;
+		memset(&st, 0, sizeof(st));
+		st.st_mode = state.isfolder ? dir_file_mode : reg_file_mode;
+		if(filler(buf, state.name.c_str(), &st, 0))
+			break;
+	}
+
+	/*
     dp = opendir(rPath.c_str());
     if (dp == NULL)
     {
@@ -236,12 +252,22 @@ static int cryptofs_readdir(const char *orig_path, void *buf, fuse_fill_dir_t fi
     }
 
     closedir(dp);
+	*/
 
     return 0;
 }
 
 static int cryptofs_mknod(const char *orig_path, mode_t mode, dev_t rdev)
 {
+	if(S_ISREG(mode)) {
+		logs("mknod regular file " + rPath);
+		structure.add_file(orig_path, 0, false, crypto);
+	} else {
+		return -1;
+	}
+	return 0;
+
+	/*
     int res;
     string aPath = getAbsolutePath(orig_path);
     string rPath = getRelativePath(orig_path);
@@ -256,12 +282,14 @@ static int cryptofs_mknod(const char *orig_path, mode_t mode, dev_t rdev)
     }
 
 	lchown(rPath.c_str(), fuse_get_context()->uid, fuse_get_context()->gid);
-
+	*/
     return 0;
 }
 
 static int cryptofs_mkdir(const char *orig_path, mode_t mode)
 {
+	structure.add_file(orig_path, 0, true, crypto);
+	/*
     string aPath = getAbsolutePath(orig_path);
     string rPath = getRelativePath(orig_path);
 	logs("mkdir " + rPath);
@@ -270,21 +298,27 @@ static int cryptofs_mkdir(const char *orig_path, mode_t mode)
     if (res == -1) return -errno;
 
 	lchown(rPath.c_str(), fuse_get_context()->uid, fuse_get_context()->gid);
+	*/
     return 0;
 }
 
 static int cryptofs_rmdir(const char *orig_path)
 {
+	structure.del_file(orig_path);
+	/*
     string aPath = getAbsolutePath(orig_path);
     string rPath = getRelativePath(orig_path);
 	logs("rmdir " + rPath);
     int res = rmdir(rPath.c_str());
     if (res == -1) return -errno;
+	*/
     return 0;
 }
 
 static int cryptofs_rename(const char *orig_from, const char *orig_to)
 {
+	return -1;
+	/*
     string aFrom = getAbsolutePath(orig_from);
     string aTo = getAbsolutePath(orig_to);
     string from = getRelativePath(orig_from);
@@ -295,10 +329,13 @@ static int cryptofs_rename(const char *orig_from, const char *orig_to)
     if (res == -1) return -errno;
 
     return 0;
+	*/
 }
 
 static int cryptofs_chmod(const char *orig_path, mode_t mode)
 {
+	return -1;
+	/*
     string aPath = getAbsolutePath(orig_path);
     string path = getRelativePath(orig_path);
 	logs("chmod " + path);
@@ -306,10 +343,13 @@ static int cryptofs_chmod(const char *orig_path, mode_t mode)
     if (res == -1) return -errno;
 
     return 0;
+	*/
 }
 
 static int cryptofs_chown(const char *orig_path, uid_t uid, gid_t gid)
 {
+	return -1;
+	/*
     string aPath = getAbsolutePath(orig_path);
     string path = getRelativePath(orig_path);
     int res = lchown(path.c_str(), uid, gid);
@@ -317,10 +357,13 @@ static int cryptofs_chown(const char *orig_path, uid_t uid, gid_t gid)
     if (res == -1) return -errno;
 
     return 0;
+	*/
 }
 
 static int cryptofs_truncate(const char *orig_path, off_t size)
 {
+	return -1;
+	/*
     string aPath = getAbsolutePath(orig_path);
     string path = getRelativePath(orig_path);
 	logs("truncate " + path);
@@ -328,6 +371,7 @@ static int cryptofs_truncate(const char *orig_path, off_t size)
     if (res == -1) return -errno;
 
     return 0;
+	*/
 }
 static int cryptofs_utimens(const char *orig_path, const struct timespec ts[2])
 {
