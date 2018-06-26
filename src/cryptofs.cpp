@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 		logs("error: savefd open failed\n");
 		exit(1);
 	}
-//	crypto_oper.init	= cryptofs_init;
+	crypto_oper.init	= cryptofs_init;
 	crypto_oper.getattr	= cryptofs_getattr;
 	crypto_oper.readdir	= cryptofs_readdir;
 	crypto_oper.mknod   = cryptofs_mknod;
