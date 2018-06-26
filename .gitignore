@@ -1,4 +1,7 @@
 build
 .keys
+*.bin
 *.key
 *.sec
+*.aux
+*.log
