@@ -17,6 +17,10 @@ using namespace CryptoPP;
 
 namespace Crypto {
 
+    static SecByteBlock stringToSecByteBlock (std::string str) {
+        return SecByteBlock((const unsigned char *)str.data(), str.size());
+    }
+
     static void SecByteBlockToByteArray(SecByteBlock source, byte *dest) {
         memcpy(dest, source.BytePtr(), source.size());
     }
@@ -198,21 +202,27 @@ namespace Crypto {
         }
 
         void encrypt(const byte *input, size_t len, SecByteBlock key, SecByteBlock IV, byte *output) {
-            // std::cerr << "encrypt" << std::endl;
             methods.symmetricEncrypt(input, len, key, IV, output);
-            // std::cerr << "encrypt done" << std::endl;
         }
 
-        void encrypt(const byte *input, size_t len, byte *output) {
-            encrypt(input, len, keys.symmetricKey, keys.IV, output);
+        void encrypt(std::string salt, const byte *input, size_t len, SecByteBlock key, SecByteBlock IV, byte *output) {
+            encrypt(input, len, addSalt(key, salt), IV, output);
+        }
+
+        void encrypt(std::string salt, const byte *input, size_t len, byte *output) {
+            encrypt(salt, input, len, keys.symmetricKey, keys.IV, output);
         }
 
         void decrypt(const byte *input, size_t len, SecByteBlock key, SecByteBlock IV, byte *output) {
             methods.symmetricDecrypt(input, len, key, IV, output);
         }
 
-        void decrypt(const byte *input, size_t len, byte *output) {
-            decrypt(input, len, keys.symmetricKey, keys.IV, output);
+        void decrypt(std::string salt, const byte *input, size_t len, SecByteBlock key, SecByteBlock IV, byte *output) {
+            decrypt(input, len, addSalt (key, salt), IV, output);
+        }
+
+        void decrypt(std::string salt, const byte *input, size_t len, byte *output) {
+            decrypt(salt, input, len, keys.symmetricKey, keys.IV, output);
         }
 
         void hashsum(const byte *input, size_t len, byte *output) {
@@ -267,7 +277,7 @@ namespace Crypto {
                     // std::cout << "keyFileLength: " << keyFileLength << std::endl;
                     // keys.symmetricKey = SecByteBlock(1);
                     keys.init(keysGroup, configs);
-                    
+
              //std::cout << "try if ok" << std::endl;
                     delete [] keysGroup;
              //std::cout << "try if ok" << std::endl;
@@ -277,7 +287,7 @@ namespace Crypto {
                     std::cout << "Wrong passphrase!" << std::endl;
                 }
             }
-            
+
             // std::cout << "try if ok" << std::endl;
         }
 
@@ -297,7 +307,7 @@ namespace Crypto {
             std::cout << "PrivateKey: " << privateKeyToString(keys.privateKey) << std::endl;
         }
 
-        void saveSec(std::string path, const byte *content, size_t len) {
+        void saveSec(std::string path, std::string salt, const byte *content, size_t len) {
             byte *signature = new byte [configs.RSAKeyLength];
             size_t sigLen = sign (content, len, signature);
             size_t totLen = 4 + sigLen + len;
@@ -313,7 +323,7 @@ namespace Crypto {
             memcpy (raw + 4 + sigLen, content, len);
 
             byte *encrypted = new byte [totLen];
-            encrypt(raw, totLen, encrypted);
+            encrypt(salt, raw, totLen, encrypted);
             delete [] raw;
 
             Util::writeBinary(path.c_str(), encrypted, totLen);
@@ -322,7 +332,7 @@ namespace Crypto {
             // std::cout << totLen << std::endl;
         }
 
-        bool loadSec(std::string path, byte *content, size_t maxLen) {
+        bool loadSec(std::string path, std::string salt, byte *content, size_t maxLen) {
             maxLen = maxLen + 4 + configs.RSAKeyLength;
             // std::cout << maxLen << std::endl;
             byte *encrypted = new byte [maxLen];
@@ -331,7 +341,7 @@ namespace Crypto {
             // std::cerr << "! " << len << std::endl;
 
             byte *decrypted = new byte [len];
-            decrypt(encrypted, len, decrypted);
+            decrypt(salt, encrypted, len, decrypted);
             // std::cout << byteToHex(decrypted, 4) << std::endl;
             delete [] encrypted;
             size_t sigLen = readInt(decrypted);
@@ -362,6 +372,16 @@ namespace Crypto {
         Keys keys;
         std::string machineIdentifier;
         AutoSeededRandomPool rnd;
+
+        SecByteBlock addSalt(SecByteBlock _key, std::string _salt) {
+            assert (configs.hashDigestLength >= configs.symmetricKeyLength);
+
+            SecByteBlock salt = stringToSecByteBlock(_salt);
+            SecByteBlock raw_key = _key + salt;
+            byte *digest = new byte [configs.hashDigestLength];
+            hashsum(raw_key.data(), raw_key.size(), digest);
+            return SecByteBlock(digest, configs.symmetricKeyLength);
+        }
 
         bool loadKeyFile(std::string keyPath, std::string passphrase, byte *content, size_t maxLen) {
 //std::cerr << keyPath << " " << passphrase << " " << content << " " << maxLen << std::endl;

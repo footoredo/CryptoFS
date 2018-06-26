@@ -32,6 +32,8 @@ int main () {
     Crypto::Crypto crypto;
     crypto.generateKeys();
 
+    std::string salt = "12345";
+
     const byte *input = (byte *)"fuck123123123123123123123 u";
 
     std::cout << "  -- Test for basic symmetric encryption/decryption --" << std::endl;
@@ -39,10 +41,10 @@ int main () {
     int len = strlen((char *)input);
     // std::cout << len << std::endl;
     byte *output = new byte[len + 1 + 16];
-    crypto.encrypt(input, len, output);
+    crypto.encrypt(salt, input, len, output);
     byte *recovered = new byte[len + 1 + 16];
     memset(recovered, 0, len + 1);
-    crypto.decrypt(output, len, recovered);
+    crypto.decrypt(salt, output, len, recovered);
 
     // std::cout << (char *)recovered << std::endl;
     assert (strcmp((char *)input, (char *)recovered) == 0);                     // Testcase for symmetric encryption
@@ -75,17 +77,17 @@ cout << "save ok" << endl;
     // crypto.displayKeys();
 
     memset(recovered, 0, len + 1);
-    crypto.decrypt(output, len, recovered);
+    crypto.decrypt(salt, output, len, recovered);
 
     // std::cout << (char *) recovered << std::endl;
     assert (strcmp((char *)input, (char *)recovered) == 0);                     // Testcase for symmetric encryption
     std::cout << "  -- Test passed! --" << std::endl << std::endl;
 
     std::cout << "  -- Test for .keys files --" << std::endl;
-    crypto.saveSec("tmp.sec", input, len);
+    crypto.saveSec("tmp.sec", salt, input, len);
     memset (recovered, 0x00, len + 1);
     // std::cerr << len << std::endl;
-    assert (crypto.loadSec("tmp.sec", recovered, len));
+    assert (crypto.loadSec("tmp.sec", salt, recovered, len));
     // std::cerr << "123123" << std::endl;
     /* for (int i = 0; i < len; ++ i)
         std::cout << (char)(recovered[i]);*/
