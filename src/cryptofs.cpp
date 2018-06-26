@@ -17,20 +17,20 @@
 #include <errno.h>
 #include <fcntl.h>
 #include "Crypto.h"
-//#include "Structure.h"
+#include "Structure.h"
 #include "Util.h"
 
 using std::ofstream;
 using std::string;
 using std::endl;
-using Structure::State;
+typedef Structure::State State;
 
 
 static int savefd;
 static ofstream logStream;
 static string mountPoint;
 //static Structure structure;
-static Crypto cryto;
+static Crypto::Crypto crypto;
 
 static void logs(string s) {
 	logStream << s << std::endl;
@@ -99,7 +99,7 @@ static void processArgs(int argc, char *argv[]) {
 		std::cerr << "Mount point: " << mountPoint << std::endl;
 		logStream = ofstream("./log.txt");
 	}
-	if(mountPoint.back() == "/")
+	if(mountPoint.back() == '/')
 		mountPoint.pop_back();
 	if(!isAbsolutePath(mountPoint)) {
 		std::cerr << "error: mount point must be an absolute path" << std::endl;
@@ -127,8 +127,8 @@ static int cryptofs_fsync(const char *orig_path, int isdatasync, struct fuse_fil
 static void cryptofs_destroy(void *private_data);
 
 void mkdir(string path) {
-	if(mkdir(path, 0777)) {
-		std::out << "error: create file failed.\n" << std::endl;
+	if(mkdir(path.c_str(), 0777)) {
+		std::cout << "error: create file failed.\n" << std::endl;
 		exit(1);
 	}
 }
@@ -142,11 +142,11 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	close(savefd);
-	savefd = open(mountPoint + "/.cfs", 0);
+	savefd = open((mountPoint + "/.cfs").c_str(), 0);
 	if(savefd == -1) {
-		std::out << "The Crypto file system does not found and will create a new one" << std::endl;
+		std::cout << "The Crypto file system does not found and will create a new one" << std::endl;
 		mkdir(mountPoint + "/.cfs");
-		savefd = open(mountPoint + "/.cfs", 0);
+		savefd = open((mountPoint + "/.cfs").c_str(), 0);
 		mkdir(mountPoint + "/.cfs/keys");
 		crypto.generateKeys();
 		crypto.saveKeys(mountPoint + "/.cfs/keys");
@@ -189,7 +189,7 @@ static int cryptofs_getattr(const char *orig_path, struct stat *stbuf)
     string aPath = getAbsolutePath(orig_path);
     string rPath = getRelativePath(orig_path);
 	logs("getattr " + rPath);
-	memset(stbuf, 0, sizeof(stat));
+	memset(stbuf, 0, sizeof(*stbuf));
 	/*
 	State state = structure.get_state(orig_path);
 	if(!state.exit) {

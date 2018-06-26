@@ -3,6 +3,8 @@
 #ifndef CRYPTOFS_STRUCTURE_H
 #define CRYPTOFS_STRUCTURE_H
 
+#include <algorithm>
+#include <vector>
 #include <string>
 #include <map>
 #include <fstream>
@@ -12,7 +14,9 @@
 #include <sys/statfs.h>
 #include "Crypto.h"
 
+using std::pair;
 using std::string;
+using std::vector;
 using std::map;
 using std::cout;
 using std::endl;
@@ -24,7 +28,6 @@ using Crypto::Crypto;
 
 class Structure {
 public:
-	
 	struct State {
 		bool exist, isfolder;
 		off_t st_size;
@@ -36,7 +39,7 @@ public:
 		State(bool _exist, bool _isfolder, off_t _st_size, string _real_name, string _salt):
 			exist(_exist), isfolder(_isfolder), st_size(_st_size), real_name(_real_name), salt(_salt) {};
 		
-	}
+	};
 
 	Structure();
 
