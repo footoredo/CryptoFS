@@ -23,11 +23,13 @@
 using std::ofstream;
 using std::string;
 using std::endl;
+using Structure::State;
 
 
 static int savefd;
 static ofstream logStream;
 static string mountPoint;
+static Structure structure;
 
 static void logs(string s) {
 	logStream << s << std::endl;
@@ -96,6 +98,8 @@ static void processArgs(int argc, char *argv[]) {
 		std::cerr << "Mount point: " << mountPoint << std::endl;
 		logStream = ofstream("./log.txt");
 	}
+	if(mountPoint.back() == "/")
+		mountPoint.pop_back();
 	if(!isAbsolutePath(mountPoint)) {
 		std::cerr << "error: mount point must be an absolute path" << std::endl;
 		exit(1);
@@ -130,6 +134,12 @@ int main(int argc, char *argv[])
 		logs("error: savefd open failed\n");
 		exit(1);
 	}
+	close(savefd);
+	savefd = open(mountPoint + "/.cfs", 0);
+	if(savefd == -1) {
+		std::out << "The Crypto file system does not found and will create a new one\n";
+	}
+	
 	crypto_oper.init	= cryptofs_init;
 	crypto_oper.getattr	= cryptofs_getattr;
 	crypto_oper.readdir	= cryptofs_readdir;
@@ -155,9 +165,11 @@ int main(int argc, char *argv[])
 
 static void *cryptofs_init(struct fuse_conn_info *info)
 {
-std::cerr << "asdfsasfda" << std::endl;
+	logs("cryptofs_init");
     fchdir(savefd);
     close(savefd);
+	const char cfs_dir = ".cfs";
+	DIR * pdir = opendir(cfs_dir);
     return NULL;
 }
 
@@ -166,9 +178,15 @@ static int cryptofs_getattr(const char *orig_path, struct stat *stbuf)
     string aPath = getAbsolutePath(orig_path);
     string rPath = getRelativePath(orig_path);
 	logs("getattr " + rPath);
-    int res = lstat(rPath.c_str(), stbuf);
-    if (res == -1) return -errno;
 
+	State state = structure.get_state(orig_path);
+	if(!state.exit) {
+		return -2;
+	}
+	memset(stbuf, 0, sizeof(stat));
+	stbuf->st_uid = getuid();
+	stbuf->st_gid = getgid();
+	stbuf->st_size = state.st_size;
     return 0;
 }
  
@@ -414,5 +432,5 @@ static int cryptofs_fsync(const char *orig_path, int isdatasync, struct fuse_fil
 }
 
 static void cryptofs_destroy (void *private_data) {
-    logs ("ffffffffffffffff");
+    logs ("cryptofs_destroy");
 }
