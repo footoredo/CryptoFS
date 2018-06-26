@@ -16,6 +16,8 @@
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include "Crypto.h"
+#include "Structure.h"
 
 using std::ofstream;
 using std::string;
@@ -104,6 +106,7 @@ static int cryptofs_fsync(const char *orig_path, int isdatasync, struct fuse_fil
 
 int main(int argc, char *argv[])
 {
+
 	processArgs(argc, argv);
 	savefd = open(mountPoint.c_str(), 0);
 	if(savefd == -1) {

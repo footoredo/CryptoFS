@@ -88,71 +88,20 @@ public:
 	~Structure() {
 		delete_node(root);
 	}
-
-	void load(string filename) {
-//cerr << "loading..." << endl;
-		Crypto::Crypto crypto;
-		crypto.loadKeys(".keys");
-//cerr << "loading..." << endl;
-		info = new byte[MAXN + 100];
-		memset (info, 0x00, MAXN + 10);
-//cerr << "loading..." << endl;
-		crypto.loadSec(filename, info, MAXN);
-//cerr << "\nloading: " << info << endl;
-		byte * tmp = info;
-		root = new Node();
-		load_node(tmp, root);
-		delete [] info;
-	}
-
-	void save(string filename) {
-		Crypto::Crypto crypto;
-		crypto.generateKeys();
-		crypto.saveKeys(".keys");
-		string info;
-		save_node(info, root);
-		if (info.length() >= MAXN) {
-			throw Util::Exception("file system too large!");
-		}
-//cerr << "\nsave: " << info << endl;
-		byte *buffer = new byte[MAXN + 10];
-		for (int i = 0; i < info.size(); ++i) {
-			buffer[i] = info[i];
-		}
-		buffer[info.size()] = 0;
-//cerr << buffer << endl;
-		crypto.saveSec(filename, buffer, MAXN);
-		delete []buffer;
-	}
-
-	bool add_file(string path, string id, bool isfolder,
-				  const struct stat &my_stat, const string &salt) { //filename including path
-		normalize_path(path);
-		return dfs_add(root, id, path, isfolder, my_stat, salt);
-	}
 	
-	bool del_file(string path) {
-		normalize_path(path);
-		return dfs_del(root, path);
-	}
-	//??? to fix???
-	struct stat *get_stat(string filename) {
-		normalize_path(filename);
-		Node *u = dfs_get_property(root, filename);
-		//Node ret;
-		//ret.my_stat = u -> my_stat;
-		//ret.isfolder = u -> isfolder;
-		//ret.id = u -> id;
-		//ret.salt = u -> salt;
-		struct stat *ret;
-		lstat("123.123", ret);
-		return ret;
-	}
-
-	void print(string filename) {
-		ofstream fout(filename);
-		dfs_print(fout, root, 0);
-	}
+	//absolute path required!
+	
+	void load(string filename);
+	
+	void save(string filename);
+	
+	bool add_file(string path, string id, bool isfolder, const string &salt);
+	
+	bool del_file(string path);
+	
+	struct stat *get_stat(string filename);
+	
+	void print(string filename);
 
 private:
 
@@ -215,6 +164,12 @@ private:
 			info = info.append(v.first + " ");
 			save_node(info, v.second);
 		}
+	}
+
+	bool add_file_with_stat(string path, string id, bool isfolder,
+				  const struct stat &my_stat, const string &salt) { //filename including path
+		normalize_path(path);
+		return dfs_add(root, id, path, isfolder, my_stat, salt);
 	}
 
 	bool dfs_add(Node *u, const string &id, string &path, bool isfolder,
@@ -309,6 +264,72 @@ private:
 	}
 
 };
+
+
+void Structure::load(string filename) {
+//cerr << "loading..." << endl;
+	Crypto::Crypto crypto;
+	crypto.loadKeys(".keys");
+//cerr << "loading..." << endl;
+	info = new byte[MAXN + 100];
+	memset (info, 0x00, MAXN + 10);
+//cerr << "loading..." << endl;
+	crypto.loadSec(filename, info, MAXN);
+//cerr << "\nloading: " << info << endl;
+	byte * tmp = info;
+	root = new Node();
+	load_node(tmp, root);
+	delete [] info;
+}
+
+void Structure::save(string filename) {
+	Crypto::Crypto crypto;
+	crypto.generateKeys();
+	crypto.saveKeys(".keys");
+	string info;
+	save_node(info, root);
+	if (info.length() >= MAXN) {
+		throw Util::Exception("file system too large!");
+	}
+//cerr << "\nsave: " << info << endl;
+	byte *buffer = new byte[MAXN + 10];
+	for (int i = 0; i < info.size(); ++i) {
+		buffer[i] = info[i];
+	}
+	buffer[info.size()] = 0;
+//cerr << buffer << endl;
+	crypto.saveSec(filename, buffer, MAXN);
+	delete []buffer;
+}
+
+bool Structure::add_file(string path, string id, bool isfolder, const string &salt) {
+	struct stat tmp;
+	add_file_with_stat(path, id, isfolder, tmp, salt);
+}
+
+bool Structure::del_file(string path) {
+	normalize_path(path);
+	return dfs_del(root, path);
+}
+//??? to fix???
+struct stat *Structure::get_stat(string filename) {
+	normalize_path(filename);
+	Node *u = dfs_get_property(root, filename);
+	//Node ret;
+	//ret.my_stat = u -> my_stat;
+	//ret.isfolder = u -> isfolder;
+	//ret.id = u -> id;
+	//ret.salt = u -> salt;
+	struct stat *ret;
+	lstat("123.123", ret);
+	return ret;
+}
+
+void Structure::print(string filename) {
+	ofstream fout(filename);
+	dfs_print(fout, root, 0);
+}
+
 
 
 #endif 
