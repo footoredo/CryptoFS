@@ -1,0 +1,117 @@
+\documentclass{article}
+\usepackage{enumitem}
+
+\begin{document}
+
+\title{\texttt{CryptoFS} Security Note}
+\author{footoredo}
+\date{\today}
+\maketitle
+
+\section{Basic structure}
+
+\begin{itemize}[noitemsep]
+    \item [] \texttt{\textbf{.cfs}}
+    \begin{itemize}[noitemsep]
+        \item [/] \texttt{keys}
+        \begin{itemize}
+            \item [/] \texttt{793220291197.key}
+            \item [/] \texttt{dfc7027894e1.key}
+            \item [] \texttt{......}
+        \end{itemize}
+        \item [/] \texttt{structure.sec}
+        \item [/] \texttt{contents}
+        \begin{itemize}
+            \item [/] \texttt{1494eade37fa.key}
+            \item [/] \texttt{9be1f33a5b86.key}
+            \item [] \texttt{......}
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\section{How to obtain the master key?}
+
+\begin{itemize}
+    \item [STEP 1] Retrive the unique identity of the device \texttt{\$DEVID}.
+    \item [STEP 2] Ask for user passpharse \texttt{\$PASS}.
+    \item [STEP 3] Compute \texttt{\$KEY = hashsum(\$DEVID + \$PASS)}.
+    \item [STEP 4] Compute \texttt{\$ID = hashsum(\$KEY + \$PASS)}.
+    \item [STEP 5] Find the key file \texttt{keys/\$ID[:12].key} and decrypt it using \texttt{\$KEY}.
+\end{itemize}
+
+\section{What's in the decrypted key file?}
+
+\begin{itemize}
+    \item [PART 1] Symmetric key \texttt{\$SIMKEY}
+    \item [PART 2] Public-key encryption key-pair
+    \begin{itemize}
+        \item [KEY 1] Public key \texttt{\$PUBKEY}
+        \item [KEY 2] Private key \texttt{\$PRIKEY}
+    \end{itemize}
+\end{itemize}
+
+\section{\texttt{.sec} file}
+A \texttt{.sec} file is the ecrypted version of the original file combined with digital signature to check its integerity. It can be decrypt into a corresponding \texttt{.raw} file.
+
+\begin{itemize}
+    \item [PART 1] Digital signature over hashsum of encrypted content (using \texttt{\$PUBKEY} and \texttt{\$PRIKEY}).
+    \item [PART 2] Encrypted content (using \texttt{\$SIMKEY|\$SALT}).
+\end{itemize}
+
+\paragraph{Why use salt?} If not, two file with same content will have same encrypted content.
+
+\section{\texttt{structure.sec}}
+
+This file stores the directory structure of all original files. It is intended for implementation of \texttt{ls} command and operation validity check. Furthermore, it also stores the \texttt{\$SALT} for each file, which is needed in the section below, and the \texttt{stat} struct.
+
+\paragraph{Why use salt?} Without salt, one can easily verify if a certain file exists. He just need to check if there is a file named \texttt{`hashsum("/foo/bar")[:12]`.sec} under the folder \texttt{contents}.
+
+\section{Where to find a file?}
+
+\begin{itemize}
+    \item [STEP 1] Assume the dir for the file is \texttt{\$DIR}. First of all check if it is valid in \texttt{structure.sec}.
+    \item [STEP 2] If it is valid, we can retrive \texttt{\$SALT} of this file. This file's identity can be computed in \texttt{\$ID = hashsum(\$DIR + \$SALT)}.
+    \item [STEP 3] Find the corresponding \texttt{.sec} file \texttt{contents/\$ID[:12].sec} and decrypt it.
+\end{itemize}
+
+\section{Implementation with \texttt{fuse}}
+
+\subsection{\texttt{mount}}
+
+
+\begin{enumerate}
+    \item 
+At startup, first check if \texttt{.cfs} folder exists in the given mount point.
+
+\begin{itemize}
+    \item If found, query for the \texttt{\$PASS} and load keys.
+    \item If not, query for the \texttt{\$PASS} as well and generate new keys.
+\end{itemize}
+    \item After keys are restored/generated, decrypt/create \texttt{structure.raw} file.
+\end{enumerate}
+
+
+
+\subsection{\texttt{umount}}
+
+\begin{enumerate}
+    \item Store \texttt{structure.raw} to \texttt{structure.sec}.
+    \item Store keys.
+\end{enumerate}
+
+\subsection{\texttt{open}}
+
+\begin{enumerate}
+    \item Check if the file exists.
+    \item Decrypt corresponding \texttt{.sec} file into \texttt{.raw} file.
+\end{enumerate}
+
+\subsection{\texttt{read}/\texttt{write}}
+
+Just operate on the decrypted \texttt{.raw} file.
+
+\subsection{\texttt{close}}
+
+Encrypt \texttt{.raw} file into \texttt{.sec}.
+
+\end{document}
