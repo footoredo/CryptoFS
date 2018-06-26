@@ -72,17 +72,17 @@ public:
 
 	struct Node {
 		map<string, Node *> children;
-		struct stat my_stat;
-		bool isfile;
+		//struct stat my_stat;
+		bool isfolder;
 		string id;
 		string salt;
 	};
 
 	Structure() {
 		root = new Node();
-		root -> id = "rt";
-		root -> salt = "rt";
-		root -> isfile = false;
+		root -> id = "root";
+		root -> salt = "root";
+		root -> isfolder = true;
 	}
 
 	~Structure() {
@@ -125,25 +125,27 @@ public:
 		delete []buffer;
 	}
 
-	bool add_file(string path, string id, bool isfile,
+	bool add_file(string path, string id, bool isfolder,
 				  const struct stat &my_stat, const string &salt) { //filename including path
 		normalize_path(path);
-		return dfs_add(root, id, path, isfile, my_stat, salt);
+		return dfs_add(root, id, path, isfolder, my_stat, salt);
 	}
 	
 	bool del_file(string path) {
 		normalize_path(path);
 		return dfs_del(root, path);
 	}
-	
-	Node get_property(string filename) {
+	//??? to fix???
+	struct stat *get_stat(string filename) {
 		normalize_path(filename);
 		Node *u = dfs_get_property(root, filename);
-		Node ret;
-		ret.my_stat = u -> my_stat;
-		ret.isfile = u -> isfile;
-		ret.id = u -> id;
-		ret.salt = u -> salt;
+		//Node ret;
+		//ret.my_stat = u -> my_stat;
+		//ret.isfolder = u -> isfolder;
+		//ret.id = u -> id;
+		//ret.salt = u -> salt;
+		struct stat *ret;
+		lstat("123.123", ret);
 		return ret;
 	}
 
@@ -183,10 +185,10 @@ private:
 	void load_node(byte *&info, Node *u) {
 //cerr << info << endl; 
 		u -> id = convert::get_str(info);
-		u -> isfile = convert::get_bool(info);
+		u -> isfolder = convert::get_bool(info);
 		u -> salt = convert::get_str(info);
 		int n_son = convert::get_int(info);
-//cerr << "node: " << u -> id << " " << u -> isfile << " " << u -> salt << " " << n_son << endl;
+//cerr << "node: " << u -> id << " " << u -> isfolder << " " << u -> salt << " " << n_son << endl;
 //cerr << "left info->" << info << endl;
 //if (++cnt == 2) { 
 //	return;
@@ -203,7 +205,7 @@ private:
 	void save_node(string &info, Node *u) {
 		//info = info + "__root__" + " ";
 		info = info.append(u -> id + " ");
-		info = info.append(to_string(u -> isfile) + " ");
+		info = info.append(to_string(u -> isfolder) + " ");
 		info = info.append(u -> salt + " "); 
 //cerr << "id when saving: " << info << endl;	
 //cerr << "node: " << info << endl;
@@ -215,7 +217,7 @@ private:
 		}
 	}
 
-	bool dfs_add(Node *u, const string &id, string &path, bool isfile,
+	bool dfs_add(Node *u, const string &id, string &path, bool isfolder,
 				  const struct stat &my_stat, const string &salt) { //absolute path
 		int pos = path.find('/');
 //cout << path;
@@ -229,9 +231,9 @@ private:
 			}
 			Node *v = new Node();
 			v -> id = id;
-			v -> isfile = isfile;
-//cout << "add file prop" << isfile << endl;
-			v -> my_stat = my_stat;
+			v -> isfolder = isfolder;
+//cout << "add file prop" << isfolder << endl;
+			//v -> my_stat = my_stat;
 			v -> salt = salt;
 			u -> children[now] = v;
 			return true;
@@ -241,11 +243,11 @@ private:
 				throw Util::Exception("No such direction: " + now);
 				return false;
 			} else {
-//std::cout << u -> isfile << endl;
-				if (it -> second -> isfile) {
+//std::cout << u -> isfolder << endl;
+				if (!(it -> second -> isfolder)) {
 					throw Util::Exception(now + " is not a dir");
 				}
-				return dfs_add(it -> second, id, path, isfile, my_stat, salt);
+				return dfs_add(it -> second, id, path, isfolder, my_stat, salt);
 			}
 		}
 	}
@@ -300,7 +302,7 @@ private:
 		fout << s << "{";
 		fout << "id: " << u -> id << ", ";
 		fout << "salt: " << u -> salt << ", ";
-		fout << "isfile: " << u -> isfile << "}" << std::endl;
+		fout << "isfolder: " << u -> isfolder << "}" << std::endl;
 		for (auto v: u -> children) {
 			dfs_print(fout, v.second, depth + 1);
 		}
