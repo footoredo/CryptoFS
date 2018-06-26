@@ -43,6 +43,15 @@ inline void load() {
 
 
 int main () {
+	/*struct stat *ss;
+	lstat("", ss);
+	//cerr << (ss == nullptr) << endl;
+	//long long ttt = ss -> st_ino;return 0;
+	if (ss != nullptr) {
+		cerr << ss -> st_ino << endl;
+	}
+	return 0;
+	*/
 /*cout << "saving..." << endl;
 	save();
 cout << "save ok\nloading..." << endl;
@@ -54,26 +63,22 @@ return 0;*/
 	try {
 		for (int i = 0; i < 3; ++i) {
 			string ni = to_string(i % 10);
-			file.add_file(ni, "id" + ni, 1, t_stat, "salt" + ni);
+			file.add_file(ni, "id" + ni, 1, "salt" + ni);
 //cerr << "father: " << i << endl;
 			for (int j = 0; j < 3; ++j) {
 				string nj = to_string(j % 10);
 //cerr << "son: " << j << endl;
-				file.add_file(ni + "/" + nj, "id" + nj, 0, t_stat, "salt" + nj);
+				file.add_file(ni + "/" + nj, "id" + nj, 0, "salt" + nj);
 //cerr << "son: " << j << " ok" << endl;				
 			}
 		}
-		file.add_file("a", "ida", 0, t_stat, "salta");//filename, id, isfile, stat, salt
+		file.add_file("a", "ida", 0, "salta");//filename, id, isfile, stat, salt
 		cout << file.del_file("0/1") << endl;
-		/*struct stat *ss;//= //file.get_stat("1/2");
-		lstat("123.123", ss);
-		ss;
-		cerr << (ss == nullptr) << endl;
-		long long ttt = ss -> st_mode;return 0;
-		cerr << ttt << endl;*/
+		
+		
 		//cout << file.del_file("2/12") << endl;
 		//file.print("filetree");
-		/*file.save("structure.sec");
+		file.save("structure.sec");
 		file.print("origin");
 		Structure newf;
 		newf.load("structure.sec");
@@ -81,7 +86,7 @@ return 0;*/
 		system("diff copy origin");
 		system("rm origin");
 		system("rm copy");
-		system("rm -r .keys");*/
+		system("rm -r .keys");
 		//cout << file.add_file("a", "id1", 1, t_stat, "salt1") << endl;
 	} catch (Util::Exception &exc) {
 		cout << "exception: " << exc.msg << endl;
