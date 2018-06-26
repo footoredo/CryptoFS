@@ -17,7 +17,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include "Crypto.h"
-#include "Structure.h"
+//#include "Structure.h"
 #include "Util.h"
 
 using std::ofstream;
@@ -29,7 +29,8 @@ using Structure::State;
 static int savefd;
 static ofstream logStream;
 static string mountPoint;
-static Structure structure;
+//static Structure structure;
+static Crypto cryto;
 
 static void logs(string s) {
 	logStream << s << std::endl;
@@ -125,6 +126,12 @@ static int cryptofs_release(const char *orig_path, struct fuse_file_info *fi);
 static int cryptofs_fsync(const char *orig_path, int isdatasync, struct fuse_file_info *fi);
 static void cryptofs_destroy(void *private_data);
 
+void mkdir(string path) {
+	if(mkdir(path, 0777)) {
+		std::out << "error: create file failed.\n" << std::endl;
+		exit(1);
+	}
+}
 
 int main(int argc, char *argv[])
 {
@@ -137,8 +144,14 @@ int main(int argc, char *argv[])
 	close(savefd);
 	savefd = open(mountPoint + "/.cfs", 0);
 	if(savefd == -1) {
-		std::out << "The Crypto file system does not found and will create a new one\n";
-	}
+		std::out << "The Crypto file system does not found and will create a new one" << std::endl;
+		mkdir(mountPoint + "/.cfs");
+		savefd = open(mountPoint + "/.cfs", 0);
+		mkdir(mountPoint + "/.cfs/keys");
+		crypto.generateKeys();
+		crypto.saveKeys(mountPoint + "/.cfs/keys");
+	} 
+	crypto.loadKeys(mountPoint + "/.cfs/keys");
 	
 	crypto_oper.init	= cryptofs_init;
 	crypto_oper.getattr	= cryptofs_getattr;
@@ -168,8 +181,6 @@ static void *cryptofs_init(struct fuse_conn_info *info)
 	logs("cryptofs_init");
     fchdir(savefd);
     close(savefd);
-	const char cfs_dir = ".cfs";
-	DIR * pdir = opendir(cfs_dir);
     return NULL;
 }
 
@@ -178,15 +189,16 @@ static int cryptofs_getattr(const char *orig_path, struct stat *stbuf)
     string aPath = getAbsolutePath(orig_path);
     string rPath = getRelativePath(orig_path);
 	logs("getattr " + rPath);
-
+	memset(stbuf, 0, sizeof(stat));
+	/*
 	State state = structure.get_state(orig_path);
 	if(!state.exit) {
 		return -2;
 	}
-	memset(stbuf, 0, sizeof(stat));
 	stbuf->st_uid = getuid();
 	stbuf->st_gid = getgid();
 	stbuf->st_size = state.st_size;
+	*/
     return 0;
 }
  

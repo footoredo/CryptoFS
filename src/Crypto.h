@@ -252,8 +252,8 @@ namespace Crypto {
             std::cout << "Enter your passphrase: ";
             std::string passphrase;
             std::cin >> passphrase;
-//passphrase = "123";
-            Util::mkdir(".keys");
+//			passphrase = "123";
+//          Util::mkdir(".keys");
             saveKeyFile(keysPath, passphrase);
         }
 
