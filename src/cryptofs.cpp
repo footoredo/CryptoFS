@@ -119,6 +119,7 @@ static int cryptofs_write(const char *orig_path, const char *buf, size_t size, o
 static int cryptofs_statfs(const char *orig_path, struct statvfs *stbuf);
 static int cryptofs_release(const char *orig_path, struct fuse_file_info *fi);
 static int cryptofs_fsync(const char *orig_path, int isdatasync, struct fuse_file_info *fi);
+static void cryptofs_destroy(void *private_data);
 
 
 int main(int argc, char *argv[])
@@ -129,7 +130,7 @@ int main(int argc, char *argv[])
 		logs("error: savefd open failed\n");
 		exit(1);
 	}
-	crypto_oper.init	= cryptofs_init;
+//	crypto_oper.init	= cryptofs_init;
 	crypto_oper.getattr	= cryptofs_getattr;
 	crypto_oper.readdir	= cryptofs_readdir;
 	crypto_oper.mknod   = cryptofs_mknod;
@@ -146,6 +147,7 @@ int main(int argc, char *argv[])
 	crypto_oper.statfs	= cryptofs_statfs;
 	crypto_oper.release	= cryptofs_release;
 	crypto_oper.fsync	= cryptofs_fsync;
+    crypto_oper.destroy = cryptofs_destroy;
 
 	int result = fuse_main(argc, argv, &crypto_oper, NULL);
 	return result;
@@ -409,4 +411,8 @@ static int cryptofs_fsync(const char *orig_path, int isdatasync, struct fuse_fil
     (void)fi;
 	logs("fsync " + getRelativePath(orig_path));
     return 0;
+}
+
+static void cryptofs_destroy (void *private_data) {
+    logs ("ffffffffffffffff");
 }
