@@ -12,6 +12,7 @@
 #include <cryptopp/rsa.h>
 #include <cryptopp/pssr.h>
 #include <cctype>
+#include "Util.h"
 
 using namespace CryptoPP;
 

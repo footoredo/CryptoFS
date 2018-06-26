@@ -18,6 +18,7 @@
 #include <fcntl.h>
 #include "Crypto.h"
 #include "Structure.h"
+#include "Util.h"
 
 using std::ofstream;
 using std::string;
@@ -106,7 +107,6 @@ static int cryptofs_fsync(const char *orig_path, int isdatasync, struct fuse_fil
 
 int main(int argc, char *argv[])
 {
-
 	processArgs(argc, argv);
 	savefd = open(mountPoint.c_str(), 0);
 	if(savefd == -1) {
@@ -137,6 +137,7 @@ int main(int argc, char *argv[])
 
 static void *cryptofs_init(struct fuse_conn_info *info)
 {
+std::cerr << "asdfsasfda" << std::endl;
     fchdir(savefd);
     close(savefd);
     return NULL;
