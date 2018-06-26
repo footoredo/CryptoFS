@@ -66,19 +66,35 @@ static string getRelativePath(string path)
 	}
 }
 
+static string mergePath(string a, string b) {
+	if(a.back() == '/')
+		a.pop_back();
+	if(b.front() == '.') {
+		if(b.size() == 1) {
+			return a;
+		} else {
+			return a + "/" + b.substr(1);
+		}
+	} else {
+		return a + "/" + b;
+	}
+}
+
 /*
  * get mountPoint and logStream
  */
 static void processArgs(int argc, char *argv[]) {
-	if(argc == 2) {
-		mountPoint = std::string(argv[1]);
-		logStream = ofstream("./log.txt");
-	} else if(argc == 3) {
-		mountPoint = std::string(argv[1]);
-		logStream = ofstream(argv[2]);
-	} else {
-		std::cerr <<  "Usage: cryptofs mountpoint [logfile]" << std::endl;
+	if(argc <= 1) {
+		std::cerr <<  "Usage: cryptofs mountpoint [other arguments]" << std::endl;
 		exit(1);
+	} else {
+		if(isAbsolutePath(argv[1])) {
+			mountPoint = std::string(argv[1]);
+		} else {
+			mountPoint = mergePath(get_current_dir_name(), argv[1]);
+		}
+		std::cerr << "Mount point: " << mountPoint << std::endl;
+		logStream = ofstream("./log.txt");
 	}
 	if(!isAbsolutePath(mountPoint)) {
 		std::cerr << "error: mount point must be an absolute path" << std::endl;
