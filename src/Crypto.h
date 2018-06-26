@@ -290,28 +290,18 @@ namespace Crypto {
                 std::cout << "Enter your passphrase: ";
                 std::string passphrase;
                 std::cin >> passphrase;
-//passphrase = "123";
-
                 int keyFileLength = configs.getKeyFileLength();
                 byte *keysGroup = new byte[keyFileLength];
-             //std::cout << "try if ok" << std::endl;
                 if (loadKeyFile(keysPath, passphrase, keysGroup, keyFileLength)) {
-             //std::cout << "try if ok" << std::endl;
-                    // std::cout << "keyFileLength: " << keyFileLength << std::endl;
                     // keys.symmetricKey = SecByteBlock(1);
                     keys.init(keysGroup, configs);
-
-             //std::cout << "try if ok" << std::endl;
                     delete [] keysGroup;
-             //std::cout << "try if ok" << std::endl;
                     break;
                 }
                 else {
                     std::cout << "Wrong passphrase!" << std::endl;
                 }
             }
-
-            // std::cout << "try if ok" << std::endl;
         }
 
         void saveKeys(std::string keysPath) {
@@ -427,9 +417,6 @@ namespace Crypto {
             std::string hash2 = hashsum(hash1, configs.hashDigestLength);
             delete [] hash1;
             std::string path = Util::combinePath(keyPath, hash2.substr(0, 2) + "/" + hash2.substr(2, 10) + ".key");
-//std::cerr << "path: " << path << std::endl;
-
-            // std::cerr << "path: " + path << std::endl;
 
             byte *buffer = new byte [maxLen];
             if (Util::readBinary(path.c_str(), buffer, maxLen)) {

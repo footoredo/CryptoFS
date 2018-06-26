@@ -20,6 +20,7 @@ using std::cerr;
 using std::ofstream;
 using std::ifstream;
 using std::to_string;
+using Crypto::Crypto;
 
 namespace convert {
 
@@ -69,19 +70,24 @@ namespace convert {
 
 class Structure {
 public:
-
-	struct Node {
-		map<string, Node *> children;
-		//struct stat my_stat;
-		bool isfolder;
-		string id;
-		string salt;
-	};
+	
+	struct State {
+		bool exist, isfolder;
+		off_t st_size;
+		string real_name;
+		
+		State() {};
+		
+		State(bool _exist, bool _isfolder, off_t _st_size, string _real_name):
+			exist(_exist), isfolder(_isfolder), st_size(_st_size), real_name(_real_name) {};
+		
+	}
 
 	Structure() {
 		root = new Node();
 		root -> id = "root";
 		root -> salt = "root";
+		root -> real_size = 0;
 		root -> isfolder = true;
 	}
 
@@ -89,21 +95,34 @@ public:
 		delete_node(root);
 	}
 	
-	//absolute path required!
+	//absolute path required!: /asdf/da/er
 	
-	void load(string filename);
+	void load(string filename, Crypto::Crypto &crypto);
 	
-	void save(string filename);
+	void save(string filename, Crypto::Crypto &crypto);
 	
-	bool add_file(string path, string id, bool isfolder, const string &salt);
+	bool add_file(string path, string id, off_t size, bool isfolder, Crypto::Crypto &crypto);
 	
 	bool del_file(string path);
 	
-	struct stat *get_stat(string filename);
+	bool modify_size(string path, off_t size);
+	
+	State get_state(string filename);
+	
+	pair<bool, vector<State> > get_state_list(string path);
 	
 	void print(string filename);
 
 private:
+
+	struct Node {
+		map<string, Node *> children;
+		//struct stat my_stat;
+		off_t real_size = 0;
+		bool isfolder;
+		string id;
+		string salt;
+	};
 
 	Node *root;
 	byte *info;
@@ -266,33 +285,22 @@ private:
 };
 
 
-void Structure::load(string filename) {
-cerr << "loading..." << endl;
-	Crypto::Crypto crypto;
-	crypto.loadKeys(".keys");
-//cerr << "loading..." << endl;
+void Structure::load(string filename, Crypto::Crypto &crypto) {
 	info = new byte[MAXN + 100];
 	memset (info, 0x00, MAXN + 10);
-//cerr << "loading..." << endl;
-cerr << crypto.getStructureSalt() << endl;
 	crypto.loadSec(filename, crypto.getStructureSalt(), info, MAXN);
-//cerr << "\nloading: " << info << endl;
 	byte * tmp = info;
 	root = new Node();
 	load_node(tmp, root);
 	delete [] info;
 }
 
-void Structure::save(string filename) {
-	Crypto::Crypto crypto;
-	crypto.generateKeys();
-	crypto.saveKeys(".keys");
+void Structure::save(string filename, Crypto::Crypto &crypto) {
 	string info;
 	save_node(info, root);
 	if (info.length() >= MAXN) {
 		throw Util::Exception("file system too large!");
 	}
-//cerr << "\nsave: " << info << endl;
 	byte *buffer = new byte[MAXN + 10];
 	for (int i = 0; i < (int)info.size(); ++i) {
 		buffer[i] = info[i];
@@ -303,9 +311,9 @@ void Structure::save(string filename) {
 	delete []buffer;
 }
 
-bool Structure::add_file(string path, string id, bool isfolder, const string &salt) {
+bool Structure::add_file(string path, string id, bool isfolder, Crypto::Crypto &crypto) {
 	struct stat tmp;
-	return add_file_with_stat(path, id, isfolder, tmp, salt);
+	return add_file_with_stat(path, id, isfolder, tmp, crypto.generateSalt());
 }
 
 bool Structure::del_file(string path) {

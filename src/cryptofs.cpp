@@ -24,7 +24,6 @@ using std::ofstream;
 using std::string;
 using std::endl;
 
-
 static int savefd;
 static ofstream logStream;
 static string mountPoint;
@@ -129,6 +128,7 @@ int main(int argc, char *argv[])
 		logs("error: savefd open failed\n");
 		exit(1);
 	}
+	
 	crypto_oper.init	= cryptofs_init;
 	crypto_oper.getattr	= cryptofs_getattr;
 	crypto_oper.readdir	= cryptofs_readdir;
@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
 	crypto_oper.statfs	= cryptofs_statfs;
 	crypto_oper.release	= cryptofs_release;
 	crypto_oper.fsync	= cryptofs_fsync;
-
+	
 	int result = fuse_main(argc, argv, &crypto_oper, NULL);
 	return result;
 }
