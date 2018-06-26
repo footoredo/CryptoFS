@@ -70,15 +70,12 @@ static string getRelativePath(string path)
  * get mountPoint and logStream
  */
 static void processArgs(int argc, char *argv[]) {
-	if(argc == 2) {
+	if(argc <= 1) {
+		std::cerr <<  "Usage: cryptofs mountpoint [other arguments]" << std::endl;
+		exit(1);
+	} else {
 		mountPoint = std::string(argv[1]);
 		logStream = ofstream("./log.txt");
-	} else if(argc == 3) {
-		mountPoint = std::string(argv[1]);
-		logStream = ofstream(argv[2]);
-	} else {
-		std::cerr <<  "Usage: cryptofs mountpoint [logfile]" << std::endl;
-		exit(1);
 	}
 	if(!isAbsolutePath(mountPoint)) {
 		std::cerr << "error: mount point must be an absolute path" << std::endl;
@@ -113,7 +110,7 @@ int main(int argc, char *argv[])
 		logs("error: savefd open failed\n");
 		exit(1);
 	}
-	crypto_oper.init	= cryptofs_init;
+//	crypto_oper.init	= cryptofs_init;
 	crypto_oper.getattr	= cryptofs_getattr;
 	crypto_oper.readdir	= cryptofs_readdir;
 	crypto_oper.mknod   = cryptofs_mknod;
