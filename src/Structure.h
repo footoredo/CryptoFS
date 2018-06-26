@@ -85,6 +85,8 @@ private:
 	void load_node(byte *&info, Node *u); 
 
 	void save_node(string &info, Node *u); 
+	
+	Node *get_target_node(string &path);
 
 	bool add_file_with_stat(string path, string hashsum, off_t size, bool isfolder, const string &salt);
 
