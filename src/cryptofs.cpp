@@ -66,6 +66,20 @@ static string getRelativePath(string path)
 	}
 }
 
+static string mergePath(string a, string b) {
+	if(a.back() == '/')
+		a.pop_back();
+	if(b.front() == '.') {
+		if(b.size() == 1) {
+			return a;
+		} else {
+			return a + "/" + b.substr(1);
+		}
+	} else {
+		return a + "/" + b;
+	}
+}
+
 /*
  * get mountPoint and logStream
  */
@@ -74,7 +88,12 @@ static void processArgs(int argc, char *argv[]) {
 		std::cerr <<  "Usage: cryptofs mountpoint [other arguments]" << std::endl;
 		exit(1);
 	} else {
-		mountPoint = std::string(argv[1]);
+		if(isAbsolutePath(argv[1])) {
+			mountPoint = std::string(argv[1]);
+		} else {
+			mountPoint = mergePath(get_current_dir_name(), argv[1]);
+		}
+		std::cerr << "Mount point: " << mountPoint << std::endl;
 		logStream = ofstream("./log.txt");
 	}
 	if(!isAbsolutePath(mountPoint)) {
@@ -110,7 +129,7 @@ int main(int argc, char *argv[])
 		logs("error: savefd open failed\n");
 		exit(1);
 	}
-//	crypto_oper.init	= cryptofs_init;
+	crypto_oper.init	= cryptofs_init;
 	crypto_oper.getattr	= cryptofs_getattr;
 	crypto_oper.readdir	= cryptofs_readdir;
 	crypto_oper.mknod   = cryptofs_mknod;
