@@ -270,10 +270,15 @@ static int cryptofs_readdir(const char *orig_path, void *buf, fuse_fill_dir_t fi
 
 static int cryptofs_mknod(const char *orig_path, mode_t mode, dev_t rdev)
 {
-	logs("cryptofs_mknod" + string(orig_path));
+	logs("cryptofs_mknod " + string(orig_path));
 	if(S_ISREG(mode)) {
 		logs("mknod regular file " + getRelativePath(orig_path));
 		structure.add_file(orig_path, 0, false, crypto);
+		State state = structure.get_state(orig_path);
+		if(state.exist) 
+			logs(" exist");
+		else
+			logs(" no exist");
 	} else {
 		return -1;
 	}
