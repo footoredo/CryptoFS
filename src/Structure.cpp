@@ -103,7 +103,8 @@ inline void Structure::normalize_path(string &path) {
 	}
 	for (; path.size() && !convert::file_letter(path.back()); path.pop_back());
 	if (path.length() == 0) {
-		throw Util::Exception("Empty path!");
+		path = "/";
+		return;
 	}
 	path = path.substr(1);
 	if (path.back() != '/') {
@@ -224,17 +225,18 @@ inline bool Structure::dfs_del(Node *u, string path) {
 }
 	
 inline pair<bool, vector<Structure::Node *> > Structure::dfs_get_list(Structure::Node *u, string path) {
-//std::cerr << "path: " << path << std::endl;
+//std::cerr << "now dfs path: " << path << std::endl;
+	bool flag = path == "/";
 	int pos = path.find('/');
 	string now = path.substr(0, pos);
 	path = path.substr(pos + 1);
 	map<string, Structure::Node *>::iterator it = u -> children.find(now);
-	if (it == u -> children.end() || !(it -> second -> isfolder)) {
+	if (!flag && (it == u -> children.end() || !(it -> second -> isfolder))) {
 		return make_pair(false, vector<Structure::Node *>());
 	}
-//std::cerr << now << " " << path << " " << path.length() << std::endl;
 	if (path.length() == 0) {
-		u = it -> second;
+//std::cerr << "ok" << std::endl;
+		u = flag ? root : it -> second;
 		vector<Structure::Node *> vec;
 		for (auto v: u -> children) {
 			vec.push_back(v.second);
@@ -338,8 +340,9 @@ Structure::State Structure::get_state(string filename) {
 }
 
 pair<bool, vector<Structure::State> > Structure::get_state_list(string path) {
+//std::cerr << "raw = " << path << std::endl;
 	Structure::normalize_path(path);
-//std::cerr << "path" << std::endl;
+//std::cerr << "normalized = " << path << std::endl;
 	pair<bool, vector<Structure::Node *> > node_list = Structure::dfs_get_list(root, path);
 	if (node_list.first == false) {
 		return make_pair(false, vector<Structure::State>());

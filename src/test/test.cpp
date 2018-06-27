@@ -29,13 +29,13 @@ int main () {
 		cerr << "\n ------- add file check -------- " << endl;
 		for (int i = 0; i < 3; ++i) {
 			string ni = to_string(i % 10);
-			file.add_file("/" + ni, 0, true, c1);
-			for (int j = 0; j < 1; ++j) {
+			file.add_file("/f" + ni, 0, true, c1);
+			for (int j = 0; j < 3; ++j) {
 				string nj = "[" + to_string(j % 10) + "]";
-				file.add_file("/" + ni + "/" + nj, i * 100 + j, false, c1);
+				file.add_file("/f" + ni + "/" + nj, i * 100 + j, false, c1);
 			}
 		}
-		file.add_file("/satomi", 10000, false, c1);
+		/*file.add_file("/satomi", 10000, false, c1);
 		cerr << " ------- add file check finished-------- " << endl;
 		
 		cerr << "\n ------- del file check -------- " << endl;
@@ -48,10 +48,10 @@ int main () {
 		cerr << file.modify_size("/2/2", 23333) << endl;
 		//cerr << file.get_state("/2/2").st_size << endl;
 		cerr << " ------- modify size check ok-------- " << endl;
-		
+		*/
 		cerr << " ------- modify state list check -------- " << endl;
-		cerr << "ok = " << file.get_state_list("/2").first << endl;
-		vector<Structure::State> state_list = file.get_state_list("/2").second;
+		cerr << "ok = " << file.get_state_list("/f2").first << endl;
+		vector<Structure::State> state_list = file.get_state_list("/f2").second;
 		for (auto s: state_list) {
 			cerr << s.exist << " " << s.isfolder << " " << s.st_size << " " << s.real_name << " " << s.fake_name << " " << s.salt << endl;
 		}		
@@ -73,7 +73,7 @@ int main () {
 		newf.print("copy");
 		
 		system("diff copy origin");
-		//system("cat origin");
+		system("cat origin");
 		system("rm origin");
 		system("rm copy");
 		system("rm -r .keys");
