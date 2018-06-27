@@ -12,7 +12,7 @@
 #include <sys/stat.h>  
 #include <unistd.h>
 #include <sys/statfs.h>
-//#include "Crypto.h"
+#include "Crypto.h"
 
 using std::pair;
 using std::string;
@@ -32,12 +32,13 @@ public:
 		bool exist, isfolder;
 		off_t st_size;
 		string real_name;
+		string fake_name;
 		string salt;
 		
 		State() {};
 		
-		State(bool _exist, bool _isfolder, off_t _st_size, string _real_name, string _salt):
-			exist(_exist), isfolder(_isfolder), st_size(_st_size), real_name(_real_name), salt(_salt) {};
+		State(bool _exist, bool _isfolder, off_t _st_size, string _real_name, string _fake_name, string _salt):
+			exist(_exist), isfolder(_isfolder), st_size(_st_size), real_name(_real_name), fake_name(_fake_name), salt(_salt) {};
 		
 	};
 
@@ -76,7 +77,7 @@ private:
 
 	Node *root;
 	byte *info;
-	static const int MAXN = 1000;
+	static const int MAXN = 10000;
 	
 	inline void normalize_path(string &path);
 

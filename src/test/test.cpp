@@ -69,7 +69,7 @@ int main () {
 		file.print("origin");
 		
 		Structure newf;		
-		newf.load("structure.sec", c2); 
+		newf.load("structure.sec", c2); return 0;
 		newf.print("copy");
 		
 		system("diff copy origin");

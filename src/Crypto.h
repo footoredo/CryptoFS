@@ -174,20 +174,20 @@ namespace Crypto {
         SHA256().CalculateDigest(output, input, len);
     }
 
-    SecByteBlock generateKey(AutoSeededRandomPool& rnd, int keyLen) {
+    static SecByteBlock generateKey(AutoSeededRandomPool& rnd, int keyLen) {
         SecByteBlock key(0x00, keyLen);
         rnd.GenerateBlock (key, key.size());
         return key;
     }
 
-    std::string publicKeyToString(RSA::PublicKey publicKey) {
+    static std::string publicKeyToString(RSA::PublicKey publicKey) {
         byte buffer[548];
         ArraySink publicKeySink (buffer, 548);
         publicKey.DEREncode(publicKeySink);
         return byteToHex(buffer, 548);
     }
 
-    std::string privateKeyToString(RSA::PrivateKey privateKey) {
+    static std::string privateKeyToString(RSA::PrivateKey privateKey) {
         byte buffer[548];
         ArraySink privateKeySink (buffer, 548);
         privateKey.DEREncode(privateKeySink);

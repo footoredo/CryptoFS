@@ -6,7 +6,7 @@
 #include <sys/stat.h>  
 #include <unistd.h>
 #include <sys/statfs.h>
-//#include "Crypto.h"
+#include "Crypto.h"
 #include "Structure.h"
 
 using std::string;
@@ -160,7 +160,7 @@ bool Structure::dfs_add(Node *u, const string &hash, string &path,
 	path = path.substr(pos + 1);
 	if (path.length() == 0) {
 		if (u -> children.count(now)) {
-			throw Util::Exception("File or dir already existed: " + now);
+			//throw Util::Exception("File or dir already existed: " + now);
 			return false;
 		}
 		Node *v = new Node();
@@ -174,11 +174,12 @@ bool Structure::dfs_add(Node *u, const string &hash, string &path,
 	} else {
 		map<string, Node *>::iterator it = u -> children.find(now);
 		if (it == u -> children.end()) {
-			throw Util::Exception("No such direction: " + now);
+			//throw Util::Exception("No such direction: " + now);
 			return false;
 		} else {
 			if (!(it -> second -> isfolder)) {
-				throw Util::Exception(now + " is not a direction");
+				//throw Util::Exception(now + " is not a direction");
+				return false;
 			}
 			return Structure::dfs_add(it -> second, hash, path, size, isfolder, salt);
 		}
@@ -186,16 +187,19 @@ bool Structure::dfs_add(Node *u, const string &hash, string &path,
 }
 	
 inline bool Structure::dfs_del(Node *u, string path) {
+//std::cerr << "now path: " << path << std::endl;
 	int pos = path.find('/');
 	string now = path.substr(0, pos);
 	path = path.substr(pos + 1);
 	map<string, Node *>::iterator it = u -> children.find(now);
 	if (path.length() == 0) {
 		if (it == u -> children.end()) {
-			throw Util::Exception("target not found");
+			//throw Util::Exception("target not found");
+			return false;
 		}
 		if (it -> second -> children.size()) {
-			throw Util::Exception("target not empty");
+			//throw Util::Exception("target not empty");
+			return false;
 		} else {
 			u -> children.erase(it);
 			//std::cerr << "left size: " << u -> children.size() << std::endl;
@@ -203,7 +207,8 @@ inline bool Structure::dfs_del(Node *u, string path) {
 		}
 	} else {
 		if (it == u -> children.end()) {
-			throw Util::Exception("dir not found: " + now);
+			//throw Util::Exception("dir not found: " + now);
+			return false;
 		} else {
 			return Structure::dfs_del(it -> second, path);
 		}
@@ -211,6 +216,7 @@ inline bool Structure::dfs_del(Node *u, string path) {
 }
 	
 inline pair<bool, vector<Structure::Node *> > Structure::dfs_get_list(Structure::Node *u, string path) {
+//std::cerr << "path: " << path << std::endl;
 	int pos = path.find('/');
 	string now = path.substr(0, pos);
 	path = path.substr(pos + 1);
@@ -218,12 +224,14 @@ inline pair<bool, vector<Structure::Node *> > Structure::dfs_get_list(Structure:
 	if (it == u -> children.end() || !(it -> second -> isfolder)) {
 		return make_pair(false, vector<Structure::Node *>());
 	}
+//std::cerr << now << " " << path << " " << path.length() << std::endl;
 	if (path.length() == 0) {
 		u = it -> second;
 		vector<Structure::Node *> vec;
 		for (auto v: u -> children) {
 			vec.push_back(v.second);
 		}
+//std::cerr << "123" << std::endl;
 		return make_pair(true, vec);
 	} else {
 		return Structure::dfs_get_list(it -> second, path);
@@ -288,12 +296,15 @@ Structure::Node *Structure::get_target_node(string &path) {
 	for (; convert::file_letter(path.back()); path.pop_back()) {
 		filename = path.back() + filename;
 	}
+//std::cerr << "split: [ " << path << ", " << filename << "]" << std::endl;
 	pair<bool, vector<Structure::Node *> > ret = dfs_get_list(root, path);
-	for (int j = 0; j < (int)ret.second.size(); +j) {
+//std::cerr << "size: " << ret.second.size() << std::endl;
+	for (int j = 0; j < (int)ret.second.size(); ++j) {
 		if (ret.second[j] -> edge == filename) {
 			return ret.second[j];
 		}
 	}
+//std::cerr << "----------" << std::endl;
 	return nullptr;
 }
 
@@ -303,6 +314,7 @@ bool Structure::modify_size(string path, off_t size) {
 		return false;
 	} else {
 		target -> real_size = size;
+		return true;
 	}
 }
 
@@ -312,14 +324,23 @@ Structure::State Structure::get_state(string filename) {
 	if (target == nullptr) {
 		ret.exist = false;
 	} else {
-		ret = State(true, target -> isfolder, target -> real_size, target -> hashsum, target -> salt);
+		ret = State(true, target -> isfolder, target -> real_size, target -> hashsum, target -> edge, target -> salt);
 	}
 	return ret;
 }
 
 pair<bool, vector<Structure::State> > Structure::get_state_list(string path) {
 	Structure::normalize_path(path);
-	pair<bool, vector<Structure::Node *> > ret = Structure::dfs_get_list(root, path);
+//std::cerr << "path" << std::endl;
+	pair<bool, vector<Structure::Node *> > node_list = Structure::dfs_get_list(root, path);
+	if (node_list.first == false) {
+		return make_pair(false, vector<Structure::State>());
+	}
+	vector<Structure::State> state_list;
+	for (auto node: node_list.second) {
+		state_list.push_back(State(true, node -> isfolder, node -> real_size, node -> hashsum, node -> edge, node -> salt));
+	}
+	return make_pair(true, state_list);
 }
 
 void Structure::print(string filename) {
