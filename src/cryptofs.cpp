@@ -79,7 +79,7 @@ static string mergePath(string a, string b) {
 
 void mkdir(string path) {
 	if(mkdir(path.c_str(), 0777)) {
-		std::cout << "error: create file failed.\n" << std::endl;
+		std::cout << "error: create dir [" + path +  "] failed.\n" << std::endl;
 		exit(1);
 	}
 }
