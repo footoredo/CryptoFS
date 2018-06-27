@@ -29,7 +29,7 @@ int main () {
 		cerr << "\n ------- add file check -------- " << endl;
 		for (int i = 0; i < 3; ++i) {
 			string ni = to_string(i % 10);
-			file.add_file("/f" + ni, 0, true, c1);
+			file.add_file("/f" + ni, i * 10000, true, c1);
 			for (int j = 0; j < 3; ++j) {
 				string nj = "[" + to_string(j % 10) + "]";
 				file.add_file("/f" + ni + "/" + nj, i * 100 + j, false, c1);
@@ -49,13 +49,18 @@ int main () {
 		//cerr << file.get_state("/2/2").st_size << endl;
 		cerr << " ------- modify size check ok-------- " << endl;
 		*/
-		cerr << " ------- modify state list check -------- " << endl;
+		/*cerr << " ------- modify state list check -------- " << endl;
 		cerr << "ok = " << file.get_state_list("/f2").first << endl;
 		vector<Structure::State> state_list = file.get_state_list("/f2").second;
 		for (auto s: state_list) {
 			cerr << s.exist << " " << s.isfolder << " " << s.st_size << " " << s.real_name << " " << s.fake_name << " " << s.salt << endl;
 		}		
-		cerr << " ------- modify state list check finished -------- " << endl;
+		cerr << " ------- modify state list check finished -------- " << endl;*/
+		
+		cerr << " ------- get state check -------- " << endl;
+		Structure::State s = file.get_state("/f2");
+		cerr << s.exist << "," << s.isfolder << "," << s.st_size << "," << s.real_name << "," << s.fake_name << "," << s.salt << endl;
+		cerr << " ------- get state check finished -------- " << endl;
 		
 		file.print("print_tree");
 		//system("cat print_tree");

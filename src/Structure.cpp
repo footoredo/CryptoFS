@@ -306,9 +306,12 @@ Structure::Node *Structure::get_target_node(string &path) {
 	for (; convert::file_letter(path.back()); path.pop_back()) {
 		filename = path.back() + filename;
 	}
+	if (path == "") {
+		path = "/";
+	}
 //std::cerr << "split: [ " << path << ", " << filename << "]" << std::endl;
 	pair<bool, vector<Structure::Node *> > ret = dfs_get_list(root, path);
-//std::cerr << "size: " << ret.second.size() << std::endl;
+//std::cerr << "exist: " << ret.first << std::endl;
 	for (int j = 0; j < (int)ret.second.size(); ++j) {
 		if (ret.second[j] -> edge == filename) {
 			return ret.second[j];
