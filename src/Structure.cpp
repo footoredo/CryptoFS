@@ -119,12 +119,19 @@ void Structure::delete_node(Node *u) {
 }
 	
 void Structure::load_node(byte *&info, Node *u) {
+/*std::cerr << "\n now: " << info << std::endl;
+if (*info == 0) {
+	while (1) {
+	
+	}
+}*/
 	u -> real_size = convert::get_long(info);
 	u -> isfolder = convert::get_bool(info);
 	u -> hashsum = convert::get_str(info);
 	u -> salt = convert::get_str(info);
 	u -> edge = convert::get_str(info);
 	int n_son = convert::get_int(info);
+//std::cerr << "read " << u -> real_size << " " << u -> edge << " " << n_son << std::endl;
 	string edge;
 	for (; n_son; --n_son) {
 		Node *v = new Node();
@@ -142,6 +149,7 @@ void Structure::save_node(string &info, Node *u) {
 	info = info.append(u -> edge + " "); 
 	//print stat
 	info = info.append(to_string(u -> children.size()) + " ");
+	info = info.append("\n");
 	for (auto v: u -> children) {
 		info = info.append(v.first + " ");
 		Structure::save_node(info, v.second);
@@ -280,7 +288,7 @@ void Structure::save(string filename, Crypto::Crypto &crypto) {
 bool Structure::add_file(string path, off_t size, bool isfolder, Crypto::Crypto &crypto) {
 	Structure::normalize_path(path);
 	string nowsalt = crypto.generateSalt();
-	string nowhash = crypto.hashsum(path + ":" + nowsalt);
+	string nowhash = crypto.hashsum(path + ":" + nowsalt).substr(0, 11);
 	return add_file_with_stat(path, nowhash, size, isfolder, nowsalt);
 }
 

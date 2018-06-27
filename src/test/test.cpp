@@ -23,14 +23,15 @@ int len = 100;
 int main () {
 	Structure file;
 	c1.generateKeys();
+	system("rm -r .keys");
 	system("mkdir .keys");
 	try {
 		cerr << "\n ------- add file check -------- " << endl;
 		for (int i = 0; i < 3; ++i) {
 			string ni = to_string(i % 10);
 			file.add_file("/" + ni, 0, true, c1);
-			for (int j = 0; j < 3; ++j) {
-				string nj = "[ " + to_string(j % 10) + " ]";
+			for (int j = 0; j < 1; ++j) {
+				string nj = "[" + to_string(j % 10) + "]";
 				file.add_file("/" + ni + "/" + nj, i * 100 + j, false, c1);
 			}
 		}
@@ -57,19 +58,18 @@ int main () {
 		cerr << " ------- modify state list check finished -------- " << endl;
 		
 		file.print("print_tree");
-		system("cat print_tree");
+		//system("cat print_tree");
 		system("rm print_tree");
 		
-		Crypto::Crypto c1;
-		c1.generateKeys();
+		c1;
 		c1.saveKeys(".keys");
-		Crypto::Crypto c2;
+		c2;
 		c2.loadKeys(".keys");
 		file.save("structure.sec", c1);
 		file.print("origin");
 		
 		Structure newf;		
-		newf.load("structure.sec", c2); return 0;
+		newf.load("structure.sec", c2);
 		newf.print("copy");
 		
 		system("diff copy origin");
