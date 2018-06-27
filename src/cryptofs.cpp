@@ -198,6 +198,8 @@ static int cryptofs_getattr(const char *orig_path, struct stat *stbuf)
 	if(!state.exist) {
 		logs(" not exist");
 		return -2;
+	} else {
+		logs(" exist");
 	}
 	stbuf->st_mode = state.isfolder ? dir_file_mode : reg_file_mode;
 	stbuf->st_uid = getuid();
