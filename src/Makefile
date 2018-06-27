@@ -1,5 +1,5 @@
 cryptofs : Configs.h Crypto.h Util.o cryptofs.o Structure.o
-	g++ -std=c++11 -Wall cryptofs.o Structure.o Util.o `pkg-config fuse --cflags --libs` -o cryptofs -lcryptopp
+	g++ -std=c++11 -Wall cryptofs.o Structure.o Util.o `pkg-config fuse --cflags --libs` -o cryptofs.out -lcryptopp
 
 cryptofs.o : Configs.h cryptofs.cpp
 	g++ -c -std=c++11 -Wall cryptofs.cpp `pkg-config fuse --cflags --libs` -o cryptofs.o -lcryptopp

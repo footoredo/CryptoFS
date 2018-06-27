@@ -516,7 +516,7 @@ namespace Crypto {
         }
         
 public:
-        void saveSec(std::string path, std::string salt, const byte *content, size_t len) {
+		void saveSec(std::string path, std::string salt, const byte *content, size_t len) {
             byte *signature = new byte [configs.RSAKeyLength];
             size_t sigLen = sign (content, len, signature);
             size_t totLen = 4 + sigLen + len;

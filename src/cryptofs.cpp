@@ -5,6 +5,8 @@
 
 #define FUSE_USE_VERSION 26
 
+#include <string>
+#include <algorithm>
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
@@ -92,16 +94,48 @@ static size_t file_length(string fname) {
 		return statbuf.st_size;
 }
 
+static string int_to_string(size_t a) {
+	string s;
+	if(a == 0)
+		s.push_back('0');
+	while(a) {
+		s.push_back(a % 10 + '0');
+		a /= 10;
+	}
+	reverse(s.begin(), s.end());
+	return s;
+}
+
 static void encode_file(State state, string raw_name, string sec_name) {
-	crypto.saveSec(raw_name, state.salt, file_length(raw_name), sec_name);
+	logs(" encode_file raw " + raw_name + " sec " + sec_name + " " + int_to_string(file_length(raw_name)));
+	try {
+		crypto.saveSec(raw_name, state.salt, file_length(raw_name), sec_name);
+	} catch (Util::Exception e) {
+		logs(" exception " + e.msg);
+	}
 }
 
 static void decode_file(State state, string sec_name, string raw_name) {
-	crypto.loadSec(sec_name, state.salt, raw_name, state.st_size);
+	logs(" decode_file sec " + sec_name + " raw " + raw_name + " " + int_to_string(state.st_size));
+	try {
+		crypto.loadSec(sec_name, state.salt, raw_name, state.st_size);
+	} catch (Util::Exception e) {
+		logs(" exception " + e.msg);
+	}
 }
 
 static void delete_file(string file_name) {
-	remove(file_name.c_str());
+	logs(" delete file " + file_name);
+	if(remove(file_name.c_str()) != 0) {
+		logs(" " + string(strerror(errno)));
+	}
+}
+
+static string content_raw_name(State state) {
+	return "./contents/" + state.sec_name + ".raw";
+}
+static string content_sec_name(State state) {
+	return "./contents/" + state.sec_name + ".sec";
 }
 
 /*
@@ -136,6 +170,7 @@ static int cryptofs_mkdir(const char *orig_path, mode_t mode);
 static int cryptofs_rmdir(const char *orig_path);
 static int cryptofs_open(const char *orig_path, struct fuse_file_info *fi);
 static int cryptofs_read(const char *orig_path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
+static int cryptofs_unlink(const char *orig_path);
 static int cryptofs_write(const char *orig_path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
 static int cryptofs_release(const char *orig_path, struct fuse_file_info *fi);
 static void cryptofs_destroy(void *private_data);
@@ -156,6 +191,7 @@ int main(int argc, char *argv[])
 		mkdir(mountPoint + "/.cfs");
 		savefd = open((mountPoint + "/.cfs").c_str(), 0);
 		mkdir(mountPoint + "/.cfs/keys");
+		mkdir(mountPoint + "/.cfs/contents");
 		crypto.generateKeys();
 		crypto.saveKeys(mountPoint + "/.cfs/keys");
 		structure.save(mountPoint + "/.cfs/structure.sec", crypto);
@@ -170,6 +206,7 @@ int main(int argc, char *argv[])
 	crypto_oper.rmdir	= cryptofs_rmdir;
 	crypto_oper.open	= cryptofs_open;
 	crypto_oper.read	= cryptofs_read;
+	crypto_oper.unlink  = cryptofs_unlink;
 	crypto_oper.write	= cryptofs_write;
 	crypto_oper.release	= cryptofs_release;
     crypto_oper.destroy = cryptofs_destroy;
@@ -275,10 +312,14 @@ static int cryptofs_mknod(const char *orig_path, mode_t mode, dev_t rdev)
 		logs("mknod regular file " + getRelativePath(orig_path));
 		structure.add_file(orig_path, 0, false, crypto);
 		State state = structure.get_state(orig_path);
-		if(state.exist) 
-			logs(" exist");
-		else
-			logs(" no exist");
+		int fd = creat(content_raw_name(state).c_str(), reg_file_mode);
+		if(fd < 0) {
+			logs(" create " + content_raw_name(state) + " failed");
+			return -1;
+		}
+		close(fd);
+		encode_file(state, content_raw_name(state), content_sec_name(state));
+		remove(content_raw_name(state).c_str());
 	} else {
 		return -1;
 	}
@@ -305,7 +346,7 @@ static int cryptofs_mknod(const char *orig_path, mode_t mode, dev_t rdev)
 
 static int cryptofs_mkdir(const char *orig_path, mode_t mode)
 {
-	logs("cryptofs_mkdir" + string(orig_path));
+	logs("cryptofs_mkdir " + string(orig_path));
 	structure.add_file(orig_path, 0, true, crypto);
 	/*
     string aPath = getAbsolutePath(orig_path);
@@ -322,7 +363,7 @@ static int cryptofs_mkdir(const char *orig_path, mode_t mode)
 
 static int cryptofs_rmdir(const char *orig_path)
 {
-	logs("cryptofs_rmdir" + string(orig_path));
+	logs("cryptofs_rmdir " + string(orig_path));
 	structure.del_file(orig_path);
 	/*
     string aPath = getAbsolutePath(orig_path);
@@ -336,13 +377,22 @@ static int cryptofs_rmdir(const char *orig_path)
 
 static int cryptofs_open(const char *orig_path, struct fuse_file_info *fi)
 {
-	logs("cryptofs_open" + string(orig_path));
+	logs("cryptofs_open " + string(orig_path));
 	State state = structure.get_state(orig_path);
-	if(!state.exist) return -2;
-	if(state.isfolder) return -1;
-	decode_file(state, "./contents/" + state.sec_name + ".sec", "./contents/" + state.raw_name + ".raw");
-	int res = open(("./contents/" + state.raw_name + ".raw").c_str(), fi->flags);
-	if(res == -1) return -errno;
+	if(!state.exist) {
+		logs(" nonexist");
+		return -2;
+	}
+	if(state.isfolder) {
+		logs(" isfolder");
+		return -1;
+	}
+	decode_file(state, content_sec_name(state), content_raw_name(state));
+	int res = open(content_raw_name(state).c_str(), fi->flags);
+	if(res == -1) {
+		logs(" can not open " + content_raw_name(state));
+		return -errno;
+	}
 	fi->fh = res;
 	return 0;
 	/*
@@ -377,7 +427,7 @@ static int cryptofs_open(const char *orig_path, struct fuse_file_info *fi)
 static int cryptofs_read(const char *orig_path, char *buf, size_t size, off_t offset,
                          struct fuse_file_info *fi)
 {
-	logs("cryptofs_read" + string(orig_path));
+	logs("cryptofs_read " + string(orig_path));
 	State state = structure.get_state(orig_path);
 	if(!state.exist) return -2;
 	if(state.isfolder) return -1;
@@ -397,10 +447,22 @@ static int cryptofs_read(const char *orig_path, char *buf, size_t size, off_t of
 	*/
 }
 
+static int cryptofs_unlink(const char *orig_path) {
+	logs("cryptofs_unlink " + string(orig_path));
+	State state = structure.get_state(orig_path);
+	if(state.exist && !state.isfolder) {
+		structure.del_file(orig_path);
+		delete_file(content_sec_name(state));
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
 static int cryptofs_write(const char *orig_path, const char *buf, size_t size,
                           off_t offset, struct fuse_file_info *fi)
 {
-	logs("cryptofs_write" + string(orig_path));
+	logs("cryptofs_write " + string(orig_path));
 	int res = pwrite(fi->fh, buf, size, offset);
 	if(res == -1)
 		return -errno;
@@ -433,10 +495,13 @@ static int cryptofs_write(const char *orig_path, const char *buf, size_t size,
 
 static int cryptofs_release(const char *orig_path, struct fuse_file_info *fi)
 {
-	logs("cryptofs_release" + string(orig_path));
+	logs("cryptofs_release " + string(orig_path));
 	State state = structure.get_state(orig_path);
-	encode_file(state, "./contents/" + state.raw_name + ".raw", "./contents/" + state.sec_name + ".sec");
-	delete_file("./contents/" + state.sec_name + ".sec");
+	encode_file(state, content_raw_name(state), content_sec_name(state));
+	
+	structure.modify_size(orig_path, file_length(content_raw_name(state)));
+
+	delete_file(content_raw_name(state));
 	close(fi->fh);
 	return 0;
 	/*
@@ -451,6 +516,7 @@ static int cryptofs_release(const char *orig_path, struct fuse_file_info *fi)
 }
 
 static void cryptofs_destroy (void *private_data) {
-    logs ("cryptofs_destroy");
+    logs ("cryptofs_destroy ");
 	structure.save("./structure.sec", crypto);
 }
+

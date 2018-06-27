@@ -15,9 +15,15 @@ namespace Util {
         return length;
     }
 
+    Exception::Exception(const std::string &_msg): msg(_msg) {}
+
     void writeBinary (const char *filename, const byte *content, int len) {
         auto file = std::fstream (filename, std::ios::out | std::ios::binary);
+		if(!file.is_open())
+			throw Exception(std::string(filename) + " not open");
         file.write ((char *)content, len);
+		if(len == 0) 
+			throw Exception(std::string(filename) + " output len = 0");
         file.close ();
     }
 
@@ -46,7 +52,6 @@ namespace Util {
         ::mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     }
     
-    Exception::Exception(const std::string &_msg): msg(_msg) {}
 
     std::string exec(const char* cmd) {
         std::array<char, 128> buffer;
