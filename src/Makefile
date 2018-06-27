@@ -1,4 +1,8 @@
-cryptofs : Configs.h Crypto.h Util.o cryptofs.o Structure.o
+build : cryptofs.out
+	sudo cp cryptofs.out /usr/bin
+	sudo cp cryptofs /usr/bin
+
+cryptofs.out : Configs.h Crypto.h Util.o cryptofs.o Structure.o
 	g++ -std=c++11 -Wall cryptofs.o Structure.o Util.o `pkg-config fuse --cflags --libs` -o cryptofs.out -lcryptopp
 
 cryptofs.o : Configs.h cryptofs.cpp

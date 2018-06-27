@@ -152,7 +152,7 @@ static void processArgs(int argc, char *argv[]) {
 			mountPoint = mergePath(get_current_dir_name(), argv[1]);
 		}
 		std::cerr << "Mount point: " << mountPoint << std::endl;
-		logStream = ofstream("./log.txt");
+		logStream = ofstream("/tmp/log.txt");
 	}
 	if(mountPoint.back() == '/')
 		mountPoint.pop_back();
