@@ -30,7 +30,7 @@ int main () {
 			string ni = to_string(i % 10);
 			file.add_file("/" + ni, 0, true, c1);
 			for (int j = 0; j < 3; ++j) {
-				string nj = to_string(j % 10);
+				string nj = "[ " + to_string(j % 10) + " ]";
 				file.add_file("/" + ni + "/" + nj, i * 100 + j, false, c1);
 			}
 		}
@@ -52,7 +52,7 @@ int main () {
 		cerr << "ok = " << file.get_state_list("/2").first << endl;
 		vector<Structure::State> state_list = file.get_state_list("/2").second;
 		for (auto s: state_list) {
-			cerr << s.exist << " " << s.isfolder << " " << s.st_size << " " << s.real_name << " " << s.salt << endl;
+			cerr << s.exist << " " << s.isfolder << " " << s.st_size << " " << s.real_name << " " << s.fake_name << " " << s.salt << endl;
 		}		
 		cerr << " ------- modify state list check finished -------- " << endl;
 		
@@ -69,7 +69,7 @@ int main () {
 		file.print("origin");
 		
 		Structure newf;		
-		newf.load("structure.sec", c2);
+		newf.load("structure.sec", c2); 
 		newf.print("copy");
 		
 		system("diff copy origin");

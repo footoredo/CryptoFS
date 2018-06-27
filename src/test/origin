@@ -1,0 +1,14 @@
+{real_size: 0, isfolder: 1, hashsum: root, salt: RootSalt, edge: root}
+    {real_size: 0, isfolder: 1, hashsum: 9ad85d3b86674e951329d931ad0869fb793ce178dfdd8a688cafda5b5992127e, salt: 6SXkkbCn, edge: 0}
+        {real_size: 0, isfolder: 0, hashsum: 58d37ff73d98a4626e0e9758cc8c025737b7e12a48fa2aa87f4f647fe4865d35, salt: FFGjXpzi, edge: [ 0 ]}
+        {real_size: 1, isfolder: 0, hashsum: fc98812d4190d609299388656d77f6573092c1f13e0b0ab4e8defba7d478ad78, salt: jwEbMFxZ, edge: [ 1 ]}
+        {real_size: 2, isfolder: 0, hashsum: 4c78ef4335d1d486ba38543f1eed4aab1489cef5f420ac9d6beaf7d49ee9623a, salt: mmwYX3hx, edge: [ 2 ]}
+    {real_size: 0, isfolder: 1, hashsum: 79b97b19330e8e03c1d0e20b02f48871bc5a2e1813a4521c8d72ac3b117ead47, salt: 7K2ePmN4, edge: 1}
+        {real_size: 100, isfolder: 0, hashsum: e7442c6c150e17d4c5b83701242a6de043a5228e18e903ac62f68491a3b498f7, salt: bhjwYzKf, edge: [ 0 ]}
+        {real_size: 101, isfolder: 0, hashsum: e72dd25b7ea90cad51766073ab3f84329c5eae1241a92694060365665194aed4, salt: jFf88jeN, edge: [ 1 ]}
+        {real_size: 102, isfolder: 0, hashsum: 5e94c7e7485b5690e400bcc8e4bbdc8a983bb53134ea629d161e42450ff846d8, salt: 3aJktY28, edge: [ 2 ]}
+    {real_size: 0, isfolder: 1, hashsum: 47f1db7035e1ed6491debd9bfc0e33ff767caf72b0749cab1d8b7cd1ed8dccf8, salt: snHAWYGn, edge: 2}
+        {real_size: 200, isfolder: 0, hashsum: 6154f76008f409880e9b0be814e2abb4d730bbdeb157c681cfb5b54be129c8c6, salt: nSztkRZZ, edge: [ 0 ]}
+        {real_size: 201, isfolder: 0, hashsum: f21acb3ad1b405ae383761f64324affeabd091b78dd6089d925f79b7c5e2011c, salt: tGNNnAHX, edge: [ 1 ]}
+        {real_size: 202, isfolder: 0, hashsum: ede2cbfdb5d4bcf962d30580d253851cee7f24ca5ad343368cb54009be7414e5, salt: PGFKFQAh, edge: [ 2 ]}
+    {real_size: 10000, isfolder: 0, hashsum: e0fefa0122a36b0e37c3f7793db3e3dd272df111b74baea3247f44f73c080041, salt: e8iMzzAD, edge: satomi}
