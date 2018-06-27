@@ -27,12 +27,25 @@ int main () {
 	system("mkdir .keys");
 	try {
 		cerr << "\n ------- add file check -------- " << endl;
+		/*file.add_file("/atxt", 1, false, c1);
+		Structure::State state = file.get_state("/atxt");
+		file.print("tree");
+		system("cat tree");
+		system("rm tree");
+		if(state.exist)
+			cerr << "exist" << endl;
+		else
+			cerr << "non exist" << endl;
+		return 0;*/
+		
 		for (int i = 0; i < 3; ++i) {
 			string ni = to_string(i % 10);
 			file.add_file("/f" + ni, i * 10000, true, c1);
+			
 			for (int j = 0; j < 3; ++j) {
 				string nj = "[" + to_string(j % 10) + "]";
-				file.add_file("/f" + ni + "/" + nj, i * 100 + j, false, c1);
+file.add_file("/f" + ni + "/" + nj, i * 100 + j, false, c1);
+std::cerr << "folder: " << "/f" + ni + "/" + nj << ", exist: " << file.get_state("/f" + ni + "/" + nj).exist << std::endl;
 			}
 		}
 		file.add_file("/satomi", 10000, false, c1);
@@ -62,12 +75,12 @@ int main () {
 		file.modify_size("/", 1010101);
 		s = file.get_state("/");
 		cerr << s.exist << "," << s.isfolder << "," << s.st_size << "," << s.real_name << "," << s.fake_name << "," << s.salt << endl;
-		/*for (int i = 0; i < 3; ++i) {
+		for (int i = 0; i < 3; ++i) {
 			for (int j = 0; j < 3; ++j) {
 				s = file.get_state("/f" + to_string(i) + "/[" + to_string(j) + "]");
 				cerr << s.exist << "," << s.isfolder << "," << s.st_size << "," << s.real_name << "," << s.fake_name << "," << s.salt << endl;
 			}
-		}*/
+		}
 		cerr << " ------- get state check finished -------- " << endl;
 		
 		file.print("print_tree");
