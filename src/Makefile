@@ -10,7 +10,7 @@ Structure.o : Configs.h Structure.h Structure.cpp
 Util.o : Util.h Util.cpp Configs.h
 	g++ -c -std=c++11 -Wall Util.cpp `pkg-config fuse --cflags --libs` -o Util.o -lcryptopp
 
-mount : cryptofs
+mount : cryptofs 
 	./cryptofs ./dir -o nonempty
 
 umount : 
