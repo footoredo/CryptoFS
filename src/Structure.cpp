@@ -120,19 +120,12 @@ void Structure::delete_node(Node *u) {
 }
 	
 void Structure::load_node(byte *&info, Node *u) {
-/*std::cerr << "\n now: " << info << std::endl;
-if (*info == 0) {
-	while (1) {
-	
-	}
-}*/
 	u -> real_size = convert::get_long(info);
 	u -> isfolder = convert::get_bool(info);
 	u -> hashsum = convert::get_str(info);
 	u -> salt = convert::get_str(info);
 	u -> edge = convert::get_str(info);
 	int n_son = convert::get_int(info);
-//std::cerr << "read " << u -> real_size << " " << u -> edge << " " << n_son << std::endl;
 	string edge;
 	for (; n_son; --n_son) {
 		Node *v = new Node();
@@ -305,6 +298,9 @@ Structure::Node *Structure::get_target_node(string &path) {
 	string filename;
 	for (; convert::file_letter(path.back()); path.pop_back()) {
 		filename = path.back() + filename;
+	}
+	if (path == "") {
+		path = "/";
 	}
 //std::cerr << "split: [ " << path << ", " << filename << "]" << std::endl;
 	pair<bool, vector<Structure::Node *> > ret = dfs_get_list(root, path);
