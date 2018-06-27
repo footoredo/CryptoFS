@@ -8,3 +8,4 @@ build
 src/cryptofs
 src/log.txt
 *.swp
+*.o
