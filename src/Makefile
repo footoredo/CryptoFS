@@ -11,6 +11,7 @@ Util.o : Util.h Util.cpp Configs.h
 	g++ -c -std=c++11 -Wall Util.cpp `pkg-config fuse --cflags --libs` -o Util.o -lcryptopp
 
 mount : cryptofs 
+	rm ./log.txt
 	./cryptofs ./dir -o nonempty
 
 umount : 
