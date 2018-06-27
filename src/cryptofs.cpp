@@ -74,15 +74,7 @@ static string getRelativePath(string path)
 static string mergePath(string a, string b) {
 	if(a.back() == '/')
 		a.pop_back();
-	if(b.front() == '.') {
-		if(b.size() == 1) {
-			return a;
-		} else {
-			return a + "/" + b.substr(1);
-		}
-	} else {
-		return a + "/" + b;
-	}
+	return a + "/" + b;
 }
 
 void mkdir(string path) {
@@ -204,13 +196,25 @@ static int cryptofs_getattr(const char *orig_path, struct stat *stbuf)
 	memset(stbuf, 0, sizeof(*stbuf));
 	State state = structure.get_state(orig_path);
 	if(!state.exist) {
+		logs(" not exist");
 		return -2;
 	}
 	stbuf->st_mode = state.isfolder ? dir_file_mode : reg_file_mode;
 	stbuf->st_uid = getuid();
 	stbuf->st_gid = getgid();
 	stbuf->st_size = state.st_size;
+	if(state.isfolder) {
+		logs(" isfolder");
+	}
     return 0;
+	/*
+    string aPath = getAbsolutePath(orig_path);
+    string rPath = getRelativePath(orig_path);
+	logs("getattr " + rPath);
+    int res = lstat(rPath.c_str(), stbuf);
+    if (res == -1) return -errno;
+	return 0;
+	*/
 }
  
 static int cryptofs_readdir(const char *orig_path, void *buf, fuse_fill_dir_t filler,
@@ -230,13 +234,19 @@ static int cryptofs_readdir(const char *orig_path, void *buf, fuse_fill_dir_t fi
 		if(filler(buf, state.fake_name.c_str(), &st, 0))
 			break;
 	}
+	return 0;
 
 	/*
-    dp = opendir(rPath.c_str());
+
+	DIR * dp;
+	struct dirent *de;
+	int res;
+
+    dp = opendir(getRelativePath(orig_path).c_str());
     if (dp == NULL)
     {
         res = -errno;
-		logs("readdir opendir failed " + rPath);
+		logs("readdir opendir failed " + getRelativePath(orig_path));
         return res;
     }
 
@@ -251,8 +261,8 @@ static int cryptofs_readdir(const char *orig_path, void *buf, fuse_fill_dir_t fi
     }
 
     closedir(dp);
-	*/
 
+	*/
     return 0;
 }
 
