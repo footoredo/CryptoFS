@@ -306,9 +306,6 @@ Structure::Node *Structure::get_target_node(string &path) {
 	for (; convert::file_letter(path.back()); path.pop_back()) {
 		filename = path.back() + filename;
 	}
-	if (path == "") {
-		path = "/";
-	}
 //std::cerr << "split: [ " << path << ", " << filename << "]" << std::endl;
 	pair<bool, vector<Structure::Node *> > ret = dfs_get_list(root, path);
 //std::cerr << "exist: " << ret.first << std::endl;
@@ -322,6 +319,10 @@ Structure::Node *Structure::get_target_node(string &path) {
 }
 
 bool Structure::modify_size(string path, off_t size) {
+	if (path == "/") {
+		root -> real_size = size;
+		return true;
+	}
 	Structure::Node *target = Structure::get_target_node(path);
 	if (target == nullptr) {
 		return false;
@@ -332,6 +333,9 @@ bool Structure::modify_size(string path, off_t size) {
 }
 
 Structure::State Structure::get_state(string filename) {
+	if (filename == "/") {
+		return State(true, true, root -> real_size, root -> hashsum, root -> edge, root -> salt);
+	}
 	Structure::Node *target = Structure::get_target_node(filename);
 	State ret;
 	if (target == nullptr) {
