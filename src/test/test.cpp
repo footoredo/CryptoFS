@@ -22,34 +22,44 @@ int len = 100;
 
 int main () {
 	Structure file;
-	Crypto::Crypto crypto;
-	crypto.generateKeys();
+	c1.generateKeys();
+	system("mkdir .keys");
 	try {
 		cerr << "\n ------- add file check -------- " << endl;
 		for (int i = 0; i < 3; ++i) {
 			string ni = to_string(i % 10);
-			file.add_file("/" + ni, 0, true, crypto);
+			file.add_file("/" + ni, 0, true, c1);
 			for (int j = 0; j < 3; ++j) {
 				string nj = to_string(j % 10);
-				file.add_file("/" + ni + "/" + nj, i * 100 + j, false, crypto);
+				file.add_file("/" + ni + "/" + nj, i * 100 + j, false, c1);
 			}
 		}
-		file.add_file("/satomi", 10000, false, crypto);
+		file.add_file("/satomi", 10000, false, c1);
 		cerr << " ------- add file check finished-------- " << endl;
 		
 		cerr << "\n ------- del file check -------- " << endl;
-		cout << file.del_file("/0/1") << endl;
-		cout << file.del_file("/0/123") << endl;
+		cerr << file.del_file("/0/1") << endl;
+		cerr << file.del_file("/0/123") << endl;
 		cerr << " ------- del file check finished -------- " << endl;
 		
 		cerr << " ------- modify size check -------- " << endl;
-		cout << file.modify_size("/gakki", 10007) << endl;
-		cout << file.modify_size("/2/2", 23333) << endl;
+		cerr << file.modify_size("/gakki", 10007) << endl;
+		cerr << file.modify_size("/2/2", 23333) << endl;
+		//cerr << file.get_state("/2/2").st_size << endl;
+		cerr << " ------- modify size check ok-------- " << endl;
+		
+		cerr << " ------- modify state list check -------- " << endl;
+		cerr << "ok = " << file.get_state_list("/2").first << endl;
+		vector<Structure::State> state_list = file.get_state_list("/2").second;
+		for (auto s: state_list) {
+			cerr << s.exist << " " << s.isfolder << " " << s.st_size << " " << s.real_name << " " << s.salt << endl;
+		}		
+		cerr << " ------- modify state list check finished -------- " << endl;
+		
 		file.print("print_tree");
 		system("cat print_tree");
-		system("rm cat print_tree");
-		cerr << " ------- modify size check ok-------- " << endl;
-		/*
+		system("rm print_tree");
+		
 		Crypto::Crypto c1;
 		c1.generateKeys();
 		c1.saveKeys(".keys");
@@ -63,10 +73,10 @@ int main () {
 		newf.print("copy");
 		
 		system("diff copy origin");
-		system("cat origin");
+		//system("cat origin");
 		system("rm origin");
 		system("rm copy");
-		system("rm -r .keys");*/
+		system("rm -r .keys");
 	} catch (Util::Exception &exc) {
 		cout << "exception: " << exc.msg << endl;
 	}
