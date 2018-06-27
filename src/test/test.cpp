@@ -58,8 +58,16 @@ int main () {
 		cerr << " ------- modify state list check finished -------- " << endl;*/
 		
 		cerr << " ------- get state check -------- " << endl;
-		Structure::State s = file.get_state("/satomi");
+		Structure::State s;
+		file.modify_size("/", 1010101);
+		s = file.get_state("/");
 		cerr << s.exist << "," << s.isfolder << "," << s.st_size << "," << s.real_name << "," << s.fake_name << "," << s.salt << endl;
+		/*for (int i = 0; i < 3; ++i) {
+			for (int j = 0; j < 3; ++j) {
+				s = file.get_state("/f" + to_string(i) + "/[" + to_string(j) + "]");
+				cerr << s.exist << "," << s.isfolder << "," << s.st_size << "," << s.real_name << "," << s.fake_name << "," << s.salt << endl;
+			}
+		}*/
 		cerr << " ------- get state check finished -------- " << endl;
 		
 		file.print("print_tree");
