@@ -35,8 +35,8 @@ int main () {
 				file.add_file("/f" + ni + "/" + nj, i * 100 + j, false, c1);
 			}
 		}
-		/*file.add_file("/satomi", 10000, false, c1);
-		cerr << " ------- add file check finished-------- " << endl;
+		file.add_file("/satomi", 10000, false, c1);
+		/*cerr << " ------- add file check finished-------- " << endl;
 		
 		cerr << "\n ------- del file check -------- " << endl;
 		cerr << file.del_file("/0/1") << endl;
@@ -58,7 +58,7 @@ int main () {
 		cerr << " ------- modify state list check finished -------- " << endl;*/
 		
 		cerr << " ------- get state check -------- " << endl;
-		Structure::State s = file.get_state("/f2");
+		Structure::State s = file.get_state("/satomi");
 		cerr << s.exist << "," << s.isfolder << "," << s.st_size << "," << s.real_name << "," << s.fake_name << "," << s.salt << endl;
 		cerr << " ------- get state check finished -------- " << endl;
 		
