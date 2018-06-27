@@ -14,5 +14,5 @@ mount : cryptofs
 	./cryptofs ./dir -o nonempty
 
 umount : 
-	sudo umount ~/Github/CryptoFS/src/cryptofs_test
+	sudo umount ./dir
 
